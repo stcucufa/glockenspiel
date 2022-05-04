@@ -34,6 +34,11 @@ const Clock = {
 
     // Schedule an event every d ms, with an optional phase (0-1)
     every(f, d, phase = 0) {
+        if (d === 0) {
+            console.warn("Ignoring every with zero interval");
+            return;
+        }
+
         this.schedule.add([f, this.now + d * (1 + phase), d]);
     },
 
@@ -77,9 +82,28 @@ const Clock = {
     // Sort and call all the callbacks for the interval since the last time
     since(lastTime) {
         // TODO negative rate
-        let scheduled = [...this.schedule.values()].filter(
-            ([_, t]) => t > lastTime && t <= this.now
-        );
+        const now = this.now;
+        let scheduled = [];
+        for (const item of this.schedule.values()) {
+            const [f, t, d] = item;
+            if (isNaN(d)) {
+                // Single occurrence
+                if (t > lastTime && t <= now) {
+                    scheduled.push(item);
+                }
+            } else {
+                // Repeating occurrence
+                let iMin = Math.ceil((lastTime - t) / d);
+                if ((t + iMin * d) === lastTime) {
+                    iMin += 1;
+                }
+                const iMax = Math.floor((now - t) / d);
+                for (let i = iMin; i <= iMax; ++i) {
+                    scheduled.push([f, t + i * d]);
+                }
+            }
+        }
+
         if (scheduled.length === 0) {
             return;
         }
@@ -124,5 +148,6 @@ clock.at(t => {
 }, 200);
 
 clock.every(t => console.log(`*** At ${t.toFixed(1)}`), 10, 0.5);  // TODO 15, 25, 35, ...
+clock.every(t => console.log(`### At ${t.toFixed(1)}`), 44, 0);  // TODO 15, 25, 35, ...
 
 clock.start();
