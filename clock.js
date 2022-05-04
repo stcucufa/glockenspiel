@@ -12,7 +12,6 @@ const Clock = {
     },
 
     // Default rate
-    // TODO set rate at runtime
     rate: 1,
 
     // Called when the clock ticks
@@ -43,16 +42,23 @@ const Clock = {
     },
 
     // Start running the clock
+    // TODO handle zero rate
     start() {
         if (this.request) {
             return;
         }
 
-        const startTime = performance.now();
+        let referenceTime = performance.now();
         let lastTime = -ε;
+        let lastRate = this.rate;
         const tick = () => {
             this.request = requestAnimationFrame(tick);
-            this.now = (performance.now() - startTime) * this.rate;
+            const now = performance.now();
+            if (this.rate !== lastRate) {
+                referenceTime = now + (lastRate / this.rate) * (referenceTime - now);
+                lastRate = this.rate;
+            }
+            this.now = (now - referenceTime) * this.rate;
             this.since(lastTime);
             lastTime = this.now;
             if (this.request) {
@@ -81,7 +87,8 @@ const Clock = {
 
     // Sort and call all the callbacks for the interval since the last time
     since(lastTime) {
-        // TODO negative rate
+        // TODO handle negative rate
+        // TODO handle changing rate (lock rate?)
         const now = this.now;
         let scheduled = [];
         for (const item of this.schedule.values()) {
@@ -126,7 +133,6 @@ const Clock = {
 };
 
 const clock = Clock.create({
-    rate: 5,
     ontick() {
         console.log(`... clock time: ${clock.now.toFixed(1)} (reported: ${Math.round(performance.now())})`);
     }
@@ -138,7 +144,7 @@ clock.at(f, 2);
 clock.at(f, 4);
 clock.at(f, 6);
 clock.at(f, 100);
-clock.at(f, 201);
+clock.at(() => console.log("??? At 200 + ε"), 200.000001);
 
 clock.at(() => { clock.at(f, 50); }, 50);
 
@@ -147,7 +153,11 @@ clock.at(t => {
     clock.stop();
 }, 200);
 
-clock.every(t => console.log(`*** At ${t.toFixed(1)}`), 10, 0.5);  // TODO 15, 25, 35, ...
-clock.every(t => console.log(`### At ${t.toFixed(1)}`), 44, 0);  // TODO 15, 25, 35, ...
+clock.every(t => console.log(`### At ${t.toFixed(1)}`), 44, 0);
+
+window.setTimeout(() => {
+    clock.rate = 0.5;
+    console.log(`--- Set clock rate to ${clock.rate}`);
+}, 100);
 
 clock.start();
