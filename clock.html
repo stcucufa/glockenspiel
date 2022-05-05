@@ -5,6 +5,10 @@
         <script type="module" src="clock-demo.js"></script>
         <style>
 
+body {
+    font-family: ui-sans-serif, sans-serif;
+}
+
 canvas {
     width: 400px;
     height: 400px;
@@ -14,5 +18,9 @@ canvas {
     </head>
     <body>
         <canvas></canvas>
+        <p>
+            <input type="range" name="rate" min="-9" max="10" value="1" tabindex="0"></input>
+            <label for="rate">Rate = <span></span></label>
+        </p>
     </body>
 </html>

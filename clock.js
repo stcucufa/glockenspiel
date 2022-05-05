@@ -44,7 +44,6 @@ export const Clock = {
     },
 
     // Start running the clock
-    // TODO handle zero rate
     start() {
         if (this.request) {
             return;
@@ -57,9 +56,15 @@ export const Clock = {
             this.request = requestAnimationFrame(tick);
             const now = performance.now();
             if (this.rate !== lastRate) {
-                referenceTime = now + (lastRate / this.rate) * (referenceTime - now);
-                console.log(`~~~ Rate change, new reference time: ${referenceTime}`);
-                lastRate = this.rate;
+                // TODO handle zero rate better
+                if (this.rate === 0) {
+                    console.warn(`Resetting rate to ${lastRate}`);
+                    this.rate = lastRate;
+                } else {
+                    referenceTime = now + (lastRate / this.rate) * (referenceTime - now);
+                    console.info(`Rate change, new reference time: ${referenceTime}`);
+                    lastRate = this.rate;
+                }
             }
             this.now = (now - referenceTime) * this.rate;
             this.since(lastTime);

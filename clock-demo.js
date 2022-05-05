@@ -12,17 +12,32 @@ canvas.height = H * devicePixelRatio;
 const context = canvas.getContext("2d");
 
 const date = new Date();
-const offset = Date.now() - date.getTimezoneOffset() * 60000;
+const offset = date.valueOf() - date.getTimezoneOffset() * 60000;
 let hours = 0;
 let minutes = 0;
 let seconds = 0;
 
 const clock = Clock.create({ ontick: draw });
+
+const rateRange = document.querySelector("input[name=rate]");
+const rateSpan = document.querySelector("label[for=rate] > span");
+const rateValue = () => {
+    let rate = Math.round(parseFloat(rateRange.value));
+    if (rate <= 0) {
+        rate -= 1;
+    }
+    rateSpan.textContent = rate.toString();
+    return rate;
+};
+
+rateRange.addEventListener("input", () => { clock.rate = rateValue(); });
+clock.rate = rateValue();
+
 clock.every(t => {
-    const now = t + offset;
-    seconds = (now / 1000) % 60;
-    minutes = (now / 60000) % 60;
-    hours = (now / 3600000) % 12;
+    const now = (t + offset) / 1000;
+    seconds = now % 60;
+    minutes = (now / 60) % 60;
+    hours = (now / 3600) % 12;
 }, 1000);
 clock.start();
 
