@@ -1,4 +1,6 @@
 const nop = () => {};
+const sign = x => x < 0 ? -1 : x > 0 ? 1 : 0;
+
 const ε = 2e-52;
 
 const Clock = {
@@ -56,6 +58,7 @@ const Clock = {
             const now = performance.now();
             if (this.rate !== lastRate) {
                 referenceTime = now + (lastRate / this.rate) * (referenceTime - now);
+                console.log(`~~~ Rate change, new reference time: ${referenceTime}`);
                 lastRate = this.rate;
             }
             this.now = (now - referenceTime) * this.rate;
@@ -87,26 +90,52 @@ const Clock = {
 
     // Sort and call all the callbacks for the interval since the last time
     since(lastTime) {
-        // TODO handle negative rate
         // TODO handle changing rate (lock rate?)
         const now = this.now;
+        const direction = sign(now - lastTime);
+        if (direction === 0) {
+            return;
+        }
         let scheduled = [];
-        for (const item of this.schedule.values()) {
-            const [f, t, d] = item;
-            if (isNaN(d)) {
-                // Single occurrence
-                if (t > lastTime && t <= now) {
-                    scheduled.push(item);
+
+        if (direction === 1) {
+            for (const item of this.schedule.values()) {
+                const [f, t, d] = item;
+                if (isNaN(d)) {
+                    // Single occurrence
+                    if (t > lastTime && t <= now) {
+                        scheduled.push(item);
+                    }
+                } else {
+                    // Repeating occurrence
+                    let iMin = Math.ceil((lastTime - t) / d);
+                    if ((t + iMin * d) === lastTime) {
+                        iMin += 1;
+                    }
+                    const iMax = Math.floor((now - t) / d);
+                    for (let i = iMin; i <= iMax; ++i) {
+                        scheduled.push([f, t + i * d]);
+                    }
                 }
-            } else {
-                // Repeating occurrence
-                let iMin = Math.ceil((lastTime - t) / d);
-                if ((t + iMin * d) === lastTime) {
-                    iMin += 1;
-                }
-                const iMax = Math.floor((now - t) / d);
-                for (let i = iMin; i <= iMax; ++i) {
-                    scheduled.push([f, t + i * d]);
+            }
+        } else {
+            for (const item of this.schedule.values()) {
+                const [f, t, d] = item;
+                if (isNaN(d)) {
+                    // Single occurrence
+                    if (t >= now && t < lastTime) {
+                        scheduled.push(item);
+                    }
+                } else {
+                    // Repeating occurrence
+                    const iMin = Math.ceil((now - t) / d);
+                    let iMax = Math.floor((lastTime - t) / d);
+                    if ((t + iMax * d) === lastTime) {
+                        iMax -= 1;
+                    }
+                    for (let i = iMin; i <= iMax; ++i) {
+                        scheduled.push([f, t + i * d]);
+                    }
                 }
             }
         }
@@ -116,7 +145,7 @@ const Clock = {
         }
 
         this.locked = true;
-        scheduled.sort(([_, a], [__, b]) => a - b);
+        scheduled.sort(([_, a], [__, b]) => direction * (a - b));
         for (const [f, t] of scheduled) {
             if (!this.stopped) {
                 f(t);
@@ -139,25 +168,16 @@ const clock = Clock.create({
 });
 
 const f = t => console.log(`!!! At ${t.toFixed(1)}`);
-clock.at(f, 0);
-clock.at(f, 2);
-clock.at(f, 4);
-clock.at(f, 6);
-clock.at(f, 100);
-clock.at(() => console.log("??? At 200 + ε"), 200.000001);
+clock.every(t => { console.log(`### At ${t.toFixed(1)}`); }, 10);
 
-clock.at(() => { clock.at(f, 50); }, 50);
+window.setTimeout(() => {
+    clock.rate = -1;
+    console.log(`!!! set clock rate to ${clock.rate}`);
+}, 100);
 
-clock.at(t => {
-    console.log(`!!! Stopping the clock at ${t.toFixed(1)} (clock time: ${clock.now.toFixed(1)})`);
+window.setTimeout(() => {
     clock.stop();
 }, 200);
 
-clock.every(t => console.log(`### At ${t.toFixed(1)}`), 44, 0);
-
-window.setTimeout(() => {
-    clock.rate = 0.5;
-    console.log(`--- Set clock rate to ${clock.rate}`);
-}, 100);
-
 clock.start();
+console.log(`=== Clock started at ${Math.round(performance.now())}`);
