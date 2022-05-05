@@ -23,9 +23,6 @@ const rateRange = document.querySelector("input[name=rate]");
 const rateSpan = document.querySelector("label[for=rate] > span");
 const rateValue = () => {
     let rate = Math.round(parseFloat(rateRange.value));
-    if (rate <= 0) {
-        rate -= 1;
-    }
     rateSpan.textContent = rate.toString();
     return rate;
 };
@@ -46,6 +43,7 @@ function draw() {
     context.save();
     context.scale(devicePixelRatio, devicePixelRatio);
     context.translate(W / 2, H / 2);
+    context.globalAlpha = clock.rate === 0 ? 0.5 : 1;
 
     const h = (hours - 3) / 6 * Math.PI;
     const m = (minutes - 15) / 30 * Math.PI;

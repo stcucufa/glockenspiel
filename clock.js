@@ -52,19 +52,33 @@ export const Clock = {
         let referenceTime = performance.now();
         let lastTime = -ε;
         let lastRate = this.rate;
+        let pauseTime = NaN;
         const tick = () => {
             this.request = requestAnimationFrame(tick);
             const now = performance.now();
             if (this.rate !== lastRate) {
-                // TODO handle zero rate better
                 if (this.rate === 0) {
-                    console.warn(`Resetting rate to ${lastRate}`);
-                    this.rate = lastRate;
-                } else {
-                    referenceTime = now + (lastRate / this.rate) * (referenceTime - now);
-                    console.info(`Rate change, new reference time: ${referenceTime}`);
-                    lastRate = this.rate;
+                    if (isNaN(pauseTime)) {
+                        console.info(`Rate set to zero, pausing`);
+                        pauseTime = now;
+                    }
+                    if (this.request) {
+                        this.ontick();
+                    }
+                    return;
                 }
+                if (!isNaN(pauseTime)) {
+                    console.info(`Resuming from zero rate with new rate`);
+                    referenceTime += now - pauseTime;
+                    pauseTime = NaN;
+                }
+                referenceTime = now + (lastRate / this.rate) * (referenceTime - now);
+                console.info(`Rate change, new reference time: ${referenceTime}`);
+                lastRate = this.rate;
+            } else if (!isNaN(pauseTime)) {
+                console.info(`Resuming from zero rate`);
+                referenceTime += now - pauseTime;
+                pauseTime = NaN;
             }
             this.now = (now - referenceTime) * this.rate;
             this.since(lastTime);
