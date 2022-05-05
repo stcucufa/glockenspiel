@@ -3,7 +3,7 @@ const sign = x => x < 0 ? -1 : x > 0 ? 1 : 0;
 
 const ε = 2e-52;
 
-const Clock = {
+export const Clock = {
 
     // Create a new clock
     create(properties = {}) {
@@ -160,24 +160,3 @@ const Clock = {
     }
 
 };
-
-const clock = Clock.create({
-    ontick() {
-        console.log(`... clock time: ${clock.now.toFixed(1)} (reported: ${Math.round(performance.now())})`);
-    }
-});
-
-const f = t => console.log(`!!! At ${t.toFixed(1)}`);
-clock.every(t => { console.log(`### At ${t.toFixed(1)}`); }, 10);
-
-window.setTimeout(() => {
-    clock.rate = -1;
-    console.log(`!!! set clock rate to ${clock.rate}`);
-}, 100);
-
-window.setTimeout(() => {
-    clock.stop();
-}, 200);
-
-clock.start();
-console.log(`=== Clock started at ${Math.round(performance.now())}`);
