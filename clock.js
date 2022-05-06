@@ -93,8 +93,7 @@ export const Clock = {
                 }
                 if (!isNaN(d)) {
                     // Stepping—move everything forward by d
-                    this.updateState.referenceTime += d;
-                    this.updateState.pauseTime += d;
+                    this.updateState.pauseTime += d / lastRate;
                     this.now = lastTime + d;
                     this.since(lastTime);
                     this.updateState.lastTime = this.now;
