@@ -19,11 +19,15 @@ let seconds = 0;
 
 const clock = Clock.create({ ontick: draw });
 
+const stepButton = document.querySelector("button");
+stepButton.addEventListener("click", () => { clock.step(1000); });
+
 const rateRange = document.querySelector("input[name=rate]");
 const rateSpan = document.querySelector("label[for=rate] > span");
 const rateValue = () => {
     let rate = Math.round(parseFloat(rateRange.value));
     rateSpan.textContent = rate.toString();
+    stepButton.disabled = rate !== 0;
     return rate;
 };
 
