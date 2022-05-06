@@ -7,7 +7,6 @@
 
 body, button {
     font-family: ui-sans-serif, sans-serif;
-    font-size: 1.2rem;
 }
 
 canvas {
@@ -15,14 +14,29 @@ canvas {
     height: 400px;
 }
 
+ul.buttons {
+    list-style-type: none;
+}
+
+ul.buttons li {
+    display: inline;
+}
+
+button[disabled] {
+    opacity: 0.5;
+}
+
         </style>
     </head>
     <body>
         <canvas></canvas>
-        <p>
-            <input type="range" name="rate" min="-10" max="10" value="1" tabindex="0"></input>
-            <label for="rate">Rate = <span>N/A</span></label>
-            <button type="button">Step</button>
-        </p>
+        <ul class="buttons">
+            <li><button type="button" name="play">▶️</button></li>
+            <li><button type="button" name="pause">⏸</button></li>
+            <li><button type="button" name="step">⏯</button></li>
+            <li><button type="button" name="stop">⏹</button></li>
+            <li><button type="button" name="rwd">⏪</button></li>
+            <li><button type="button" name="ffwd">⏩</button></li>
+        </ul>
     </body>
 </html>

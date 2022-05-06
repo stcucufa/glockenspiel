@@ -80,7 +80,7 @@ export const Clock = {
     // Tick
     tick(d) {
         const now = performance.now();
-        const { lastRate, lastTime, pauseTime, request } = this.updateState;
+        const { lastRate, lastTime, pauseTime } = this.updateState;
 
         this.requestUpdate();
 
@@ -98,7 +98,7 @@ export const Clock = {
                     this.since(lastTime);
                     this.updateState.lastTime = this.now;
                 }
-                if (request) {
+                if (this.updateState.request) {
                     this.ontick();
                 }
                 return;
@@ -119,7 +119,7 @@ export const Clock = {
         this.now = (now - this.updateState.referenceTime) * this.rate;
         this.since(lastTime);
         this.updateState.lastTime = this.now;
-        if (request) {
+        if (this.updateState.request) {
             this.ontick();
         }
     },
@@ -136,11 +136,20 @@ export const Clock = {
 
         this.updateState = this.ready();
         this.requestUpdate();
+        this.now = 0;
+    },
+
+    resume(rate) {
+        if (this.rate !== 0) {
+            return;
+        }
+
+        this.rate = rate ?? this.updateState.lastRate;
     },
 
     // Stop the clock, resetting the time
     stop() {
-        if (!this.request) {
+        if (!this.updateState) {
             return;
         }
 
@@ -149,8 +158,8 @@ export const Clock = {
             return;
         }
 
-        cancelAnimationFrame(this.request);
-        delete this.request;
+        cancelAnimationFrame(this.updateState.request);
+        delete this.updateState;
         this.now = NaN;
     },
 

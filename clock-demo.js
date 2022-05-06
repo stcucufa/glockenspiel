@@ -1,5 +1,18 @@
 import { Clock } from "./clock.js";
 
+function assoc(xs, f) {
+    let m = new Map();
+    for (let i = 0, n = xs.length; i < n; ++i) {
+        m.set(...f(xs[i], i));
+    }
+    return m;
+}
+
+function dateWithTimezoneOffset() {
+    const date = new Date();
+    return date.valueOf() - date.getTimezoneOffset() * 60000;
+}
+
 const canvas = document.querySelector("canvas");
 const W = canvas.clientWidth;
 const H = canvas.clientHeight;
@@ -11,28 +24,61 @@ canvas.height = H * devicePixelRatio;
 
 const context = canvas.getContext("2d");
 
-const date = new Date();
-const offset = date.valueOf() - date.getTimezoneOffset() * 60000;
+let offset = dateWithTimezoneOffset();
 let hours = 0;
 let minutes = 0;
 let seconds = 0;
 
 const clock = Clock.create({ ontick: draw });
+const buttons = assoc(
+    document.querySelectorAll("ul.buttons button"),
+    button => [button.name, button]
+);
 
-const stepButton = document.querySelector("button");
-stepButton.addEventListener("click", () => { clock.step(1000); });
+let rateExponent = 0;
+const MaxRateExponent = 8;
 
-const rateRange = document.querySelector("input[name=rate]");
-const rateSpan = document.querySelector("label[for=rate] > span");
-const rateValue = () => {
-    let rate = Math.round(parseFloat(rateRange.value));
-    rateSpan.textContent = rate.toString();
-    stepButton.disabled = rate !== 0;
-    return rate;
-};
+for (let [name, f] of Object.entries({
+    play: () => {
+        if (clock.rate === 0 && !isNaN(clock.now)) {
+            clock.resume(1);
+        } else if (isNaN(clock.now)) {
+            offset = dateWithTimezoneOffset();
+            clock.start();
+        }
+        clock.rate = 1;
+        rateExponent = 0;
+    },
+    pause: () => {
+        clock.rate = 0;
+        rateExponent = 0;
+    },
+    stop: () => {
+        clock.stop();
+        rateExponent = 0;
+    },
+    ffwd: () => {
+        if (clock.rate < 0) {
+            rateExponent = 0;
+        }
+        rateExponent = (rateExponent + 1) % MaxRateExponent;
+        clock.rate = 2 ** rateExponent;
+    },
+    rwd: () => {
+        if (clock.rate > 0) {
+            rateExponent = 0;
+        }
+        rateExponent = (rateExponent + 1) % MaxRateExponent;
+        clock.rate = -(2 ** rateExponent);
+    },
 
-rateRange.addEventListener("input", () => { clock.rate = rateValue(); });
-clock.rate = rateValue();
+    step: () => { clock.step(1000); }
+})) {
+    buttons.get(name).addEventListener("click", () => {
+        f();
+        updateButtons();
+    });
+}
 
 clock.every(t => {
     const now = (t + offset) / 1000;
@@ -41,6 +87,18 @@ clock.every(t => {
     hours = (now / 3600) % 12;
 }, 1000);
 clock.start();
+updateButtons();
+
+function updateButtons() {
+    const isClockStopped = isNaN(clock.now);
+    const isClockPaused = clock.rate === 0;
+    buttons.get("play").disabled = !isClockStopped && !isClockPaused && clock.rate === 1;
+    buttons.get("pause").disabled = isClockStopped || isClockPaused;
+    buttons.get("stop").disabled = isClockStopped;
+    buttons.get("ffwd").disabled = isClockStopped || isClockPaused;
+    buttons.get("rwd").disabled = isClockStopped || isClockPaused;
+    buttons.get("step").disabled = isClockStopped || !isClockPaused;
+}
 
 function draw() {
     context.clearRect(0, 0, canvas.width, canvas.height);
