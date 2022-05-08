@@ -1,4 +1,7 @@
 const nop = () => {};
+const sign = x => x < 0 ? -1 : x > 0 ? 1 : 0;
+
+const ε = 2e-52;
 
 export const Clock = {
 
@@ -7,52 +10,228 @@ export const Clock = {
         return Object.assign(Object.create(this), properties, {
             // Schedule items:
             //   * [f, d] for single occurrences
+            //   * [f, d, t] for repeating occurrences
+            // TODO use heap for schedule for faster querying
             schedule: new Set(),
 
-            // Default rate
-            rate: 1,
+            // NaN when the clock is not running
+            now: NaN,
         });
     },
 
-    // Schedule an event at time t
+    // Default rate
+    // TODO setRate()
+    rate: 1,
+
+    // Called when the clock ticks after all the updates have been made
+    ontick: nop,
+
+    // Schedule an event at time t (in ms)
     at(f, t) {
-        const item = [f, t];
-        this.schedule.add(item);
-
-        // When the events are being processed, we may have added an event in
-        // the (remaining) interval.
-        if (this.scheduled && t > this.now && t <= this.scheduled.at(-1)?.[1]) {
-            let i = this.scheduled.length - 1;
-            while (i >= 0 && t < this.scheduled[i][1]) {
-                --i;
-            }
-            this.scheduled.splice(i, 0, item);
+        if (this.locked) {
+            // TODO scheduling in the past (should be OK)
+            // TODO scheduling in the future (should be OK)
+            // TODO scheduling in the same update interval
+            // TODO scheduling at the exact same time (can lead to a loop)
+            console.warn("Ignoring at() during update");
+            return;
         }
+
+        this.schedule.add([f, t]);
     },
 
-    // Advance time by d
+    // Schedule an event every d ms, with an optional phase (0-1)
+    every(f, d, phase = 0) {
+        // TODO locked
+        if (d === 0) {
+            console.warn("Ignoring every with zero interval");
+            return;
+        }
+
+        // TODO begin/end
+        this.schedule.add([f, d * phase, d]);
+    },
+
+    // Step by a given amount of time (only when paused)
+    step(d) {
+        if (this.rate !== 0 || !this.updateState?.request) {
+            console.warn("Stepping is only for paused clocks");
+            return;
+        }
+
+        this.updateState = this.ready();
+        this.tick(d);
+    },
+
+    // Create a new update state or return the current one if available.
+    ready() {
+        return this.updateState ?? {
+            referenceTime: performance.now(),
+            lastTime: -ε,
+            lastRate: this.rate,
+
+            resume(now) {
+                this.referenceTime += now - this.pauseTime;
+                delete this.pauseTime;
+            }
+        };
+    },
+
+    // Tick
     tick(d) {
-        const lastTime = this.now ?? (-2) ** -1073;
-        const now = lastTime + this.rate * d;
-        this.between(lastTime, now);
+        const now = performance.now();
+        const { lastRate, lastTime, pauseTime } = this.updateState;
+
+        this.requestUpdate();
+
+        // Handle rate change (since last tick), and zero rate (paused)
+        if (this.rate !== lastRate) {
+            if (this.rate === 0) {
+                if (isNaN(pauseTime)) {
+                    console.info(`Rate set to zero, pausing`);
+                    this.updateState.pauseTime = now;
+                }
+                if (!isNaN(d)) {
+                    // Stepping—move everything forward by d
+                    this.updateState.pauseTime += d / lastRate;
+                    this.now = lastTime + d;
+                    this.since(lastTime);
+                    this.updateState.lastTime = this.now;
+                }
+                if (this.updateState.request) {
+                    this.ontick();
+                }
+                return;
+            }
+            if (!isNaN(pauseTime)) {
+                console.info(`Resuming from zero rate with new rate`);
+                this.updateState.resume(now);
+            }
+            this.updateState.referenceTime = now +
+                (lastRate / this.rate) * (this.updateState.referenceTime - now);
+            console.info(`Rate change, new reference time: ${this.updateState.referenceTime}`);
+            this.updateState.lastRate = this.rate;
+        } else if (!isNaN(pauseTime)) {
+            console.info(`Resuming from zero rate`);
+            this.updateState.resume(now);
+        }
+
+        this.now = (now - this.updateState.referenceTime) * this.rate;
+        this.since(lastTime);
+        this.updateState.lastTime = this.now;
+        if (this.updateState.request) {
+            this.ontick();
+        }
     },
 
-    // Process all events between the last time (excluded) and now
-    between(lastTime, now) {
-        this.scheduled = [[nop, now]];
-        for (const item of this.schedule.values()) {
-            const [f, t] = item;
-            if (t > lastTime && t <= now) {
-                this.scheduled.push(item);
+    requestUpdate() {
+        this.updateState.request = requestAnimationFrame(() => this.tick());
+    },
+
+    // Start running the clock
+    start() {
+        if (this.updateState) {
+            return;
+        }
+
+        this.updateState = this.ready();
+        this.requestUpdate();
+        this.now = 0;
+    },
+
+    resume(rate) {
+        if (this.rate !== 0) {
+            return;
+        }
+
+        this.rate = rate ?? this.updateState.lastRate;
+    },
+
+    // Stop the clock, resetting the time
+    stop() {
+        if (!this.updateState) {
+            return;
+        }
+
+        if (this.locked) {
+            this.stopped = true;
+            return;
+        }
+
+        cancelAnimationFrame(this.updateState.request);
+        delete this.updateState;
+        this.now = NaN;
+    },
+
+    // Sort and call all the callbacks for the interval since the last time
+    since(lastTime) {
+        // TODO handle changing rate (lock rate?)
+        const now = this.now;
+        const direction = sign(now - lastTime);
+        if (direction === 0) {
+            return;
+        }
+        let scheduled = [];
+
+        if (direction === 1) {
+            for (const item of this.schedule.values()) {
+                const [f, t, d] = item;
+                if (isNaN(d)) {
+                    // Single occurrence
+                    if (t > lastTime && t <= now) {
+                        scheduled.push(item);
+                    }
+                } else {
+                    // Repeating occurrence
+                    let iMin = Math.ceil((lastTime - t) / d);
+                    if ((t + iMin * d) === lastTime) {
+                        iMin += 1;
+                    }
+                    const iMax = Math.floor((now - t) / d);
+                    for (let i = iMin; i <= iMax; ++i) {
+                        scheduled.push([f, t + i * d]);
+                    }
+                }
+            }
+        } else {
+            for (const item of this.schedule.values()) {
+                const [f, t, d] = item;
+                if (isNaN(d)) {
+                    // Single occurrence
+                    if (t >= now && t < lastTime) {
+                        scheduled.push(item);
+                    }
+                } else {
+                    // Repeating occurrence
+                    const iMin = Math.ceil((now - t) / d);
+                    let iMax = Math.floor((lastTime - t) / d);
+                    if ((t + iMax * d) === lastTime) {
+                        iMax -= 1;
+                    }
+                    for (let i = iMin; i <= iMax; ++i) {
+                        scheduled.push([f, t + i * d]);
+                    }
+                }
             }
         }
-        this.scheduled.sort(([_, a], [__, b]) => a - b);
 
-        while (this.scheduled.length > 0) {
-            const [f, t] = this.scheduled.shift();
-            this.now = t;
-            f(this);
+        if (scheduled.length === 0) {
+            return;
         }
-        delete this.scheduled;
+
+        this.locked = true;
+        scheduled.sort(([_, a], [__, b]) => direction * (a - b));
+        for (const [f, t] of scheduled) {
+            if (!this.stopped) {
+                f(t);
+            }
+        }
+        delete this.locked;
+
+        if (this.stopped) {
+            delete this.stopped;
+            this.stop();
+        }
     }
-}
+
+};
