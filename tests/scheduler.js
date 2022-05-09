@@ -1,30 +1,29 @@
 import { Scheduler } from "../lib/scheduler.js";
 
 const scheduler = Scheduler.create();
-const happeningAt = t => scheduler.at(scheduler => {
+const happeningAt = t => scheduler.at(now => {
     console.assert(
-        scheduler.now === t,
-        `Happening at time ${scheduler.now} vs. expected ${t}`
+        now === t,
+        `Happening at time ${now} vs. expected ${t}`
     );
-    console.log(`Happening at time ${scheduler.now}`);
+    console.log(`Happening at time ${now}`);
 }, t);
 
-const step = (d, t) => {
-    scheduler.tick(d);
-    console.assert(
-        scheduler.now === t,
-        `Stepped by ${d}, at time ${scheduler.now} vs. expected ${t}`
-    );
-    console.log(`Now: ${scheduler.now}`);
+let now = -1e-15;
+const step = t => {
+    scheduler.update(now, t);
+    now = t;
+    console.log(`Now: ${now}`);
 };
 
 happeningAt(0);
 happeningAt(43);
 happeningAt(17);
+happeningAt(57);
 
-step(19, 19);
-step(19, 38);
-step(19, 57);
-step(-19, 38);
-step(-19, 19);
-step(-19, 0);
+step(19);
+step(38);
+step(57);
+step(38);
+step(19);
+step(0);
