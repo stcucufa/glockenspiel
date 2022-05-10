@@ -25,12 +25,12 @@ console.log(`Starting at ${clock.now} (${clock.referenceTime})`);
 setTimeout(() => {
     clock.setRate(0);
     console.log(`Pausing at ${clock.now} (${clock.referenceTime})`);
-    console.assert(clock.state === Clock.States.Running);
+    console.assert(clock.state === Clock.States.Paused);
 }, 100);
 setTimeout(() => {
     clock.setRate(-0.5);
     console.log(`Going back at ${clock.now} (${clock.referenceTime})`);
-    console.assert(clock.state === Clock.States.Paused);
+    console.assert(clock.state === Clock.States.Running);
 }, 300);
 setTimeout(() => {
     clock.stop();
