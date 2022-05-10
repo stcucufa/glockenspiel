@@ -17,6 +17,10 @@ happeningAt(17);
 happeningAt(19);
 happeningAt(57);
 
+clock.scheduler.at((now, [from, to]) => {
+    console.log(`Happening repeatedly at time ${now} in ]${from}, ${to}] (clock time: ${clock.now})`);
+}, 0, 50);
+
 clock.start();
 console.assert(clock.state === Clock.States.Running);
 console.assert(clock.now >= 0);
