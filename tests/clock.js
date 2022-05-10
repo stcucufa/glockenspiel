@@ -3,12 +3,12 @@ import { Clock } from "../lib/clock.js";
 const clock = Clock.create();
 console.assert(clock.state === Clock.States.Stopped);
 
-const happeningAt = t => clock.scheduler.at(now => {
+const happeningAt = t => clock.scheduler.at((now, [from, to]) => {
     console.assert(
         now === t,
         `Happening at time ${now} vs. expected ${t}`
     );
-    console.log(`Happening at time ${now} (clock time: ${clock.now})`);
+    console.log(`Happening at time ${now} in [${from}, ${to}[ (clock time: ${clock.now})`);
 }, t);
 
 happeningAt(0);
@@ -20,8 +20,15 @@ happeningAt(57);
 clock.start();
 console.assert(clock.state === Clock.States.Running);
 console.assert(clock.now >= 0);
+console.log(`Starting at ${clock.now} (${clock.referenceTime})`);
+
+setTimeout(() => {
+    clock.setRate(-0.5);
+    console.log(`Going back at ${clock.now} (${clock.referenceTime})`);
+    console.assert(clock.state === Clock.States.Running);
+}, 100);
 setTimeout(() => {
     clock.stop();
     console.log(`Stopped at ${clock.now}`);
     console.assert(clock.state === Clock.States.Stopped);
-}, 100)
+}, 300);
