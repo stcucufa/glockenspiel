@@ -1,4 +1,4 @@
-import { Clock } from "./clock.js";
+import { Clock } from "../lib/clock.js";
 
 function assoc(xs, f) {
     let m = new Map();
@@ -24,7 +24,7 @@ let hours = 0;
 let minutes = 0;
 let seconds = 0;
 
-const clock = Clock.create({ ontick: draw });
+const clock = Clock.create({ onupdate });
 
 const buttons = assoc(
     document.querySelectorAll("ul.buttons button"),
@@ -128,17 +128,17 @@ function setState(q) {
     }
 }
 
-clock.every(t => {
+clock.scheduler.at(t => {
     const now = Math.round((t + offset) / 1000);
     seconds = now % 60;
     minutes = (now / 60) % 60;
     hours = (now / 3600) % 12;
-}, 1000);
+}, 0, 1000);
 
 let state = "stopped";
 setState(states[state].play);
 
-function draw() {
+function onupdate() {
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.save();
     context.scale(devicePixelRatio, devicePixelRatio);
