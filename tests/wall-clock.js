@@ -64,7 +64,7 @@ const states = {
         play,
         ffwd: ["forward_1", setRateFromState],
         rwd: ["rewind_0", setRateFromState],
-        step: ["paused", () => { clock.step(1000); }]
+        step: ["paused", () => { clock.advance(1000); }]
     },
 
     desuap: {
@@ -72,12 +72,13 @@ const states = {
         play,
         ffwd: ["forward_1", setRateFromState],
         rwd: ["rewind_0", setRateFromState],
-        step: ["desuap", () => { clock.step(-1000); }]
+        step: ["desuap", () => { clock.advance(-1000); }]
     },
 
     forward_0: {
         stop,
         pause,
+        step: ["forward_0", () => { clock.advance(1000); }],
         ffwd: ["forward_1", setRateFromState],
         rwd: ["rewind_0", setRateFromState]
     },
@@ -86,6 +87,7 @@ const states = {
         stop,
         pause: ["desuap", () => { clock.pause(); }],
         play: ["forward_0", setRateFromState],
+        step: ["rewind_0", () => { clock.advance(-1000); }],
         ffwd: ["forward_1", setRateFromState],
         rwd: ["rewind_1", setRateFromState]
     },
@@ -93,17 +95,22 @@ const states = {
 
 const FfwdSteps = 8;
 for (let i = 1; i < FfwdSteps; ++i) {
-    states[`forward_${i}`] = {
+    const f = `forward_${i}`;
+    const r = `rewind_${i}`;
+    const d = 1000 * 2 ** i;
+    states[f] = {
         stop,
         pause,
         play,
+        step: [f, () => { clock.advance(d); }],
         ffwd: [`forward_${Math.max(1, (i + 1) % FfwdSteps)}`, setRateFromState],
         rwd: ["rewind_0", setRateFromState]
     };
-    states[`rewind_${i}`] = {
+    states[r] = {
         stop,
         pause: ["desuap", () => { clock.pause(); }],
         play,
+        step: [r, () => { clock.advance(-d); }],
         ffwd: ["forward_1", setRateFromState],
         rwd: [`rewind_${(i + 1) % FfwdSteps}`, setRateFromState]
     };
@@ -137,7 +144,7 @@ function onupdate() {
     context.save();
     context.scale(devicePixelRatio, devicePixelRatio);
     context.translate(W / 2, H / 2);
-    context.globalAlpha = clock.rate === 0 ? 0.5 : 1;
+    context.globalAlpha = clock.state === Clock.States.Running ? 1 : 0.5;
 
     const h = (hours - 3) / 6 * Math.PI;
     const m = (minutes - 15) / 30 * Math.PI;
