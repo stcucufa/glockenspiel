@@ -1,12 +1,5 @@
+import { assoc } from "../lib/util.js";
 import { Clock } from "../lib/clock.js";
-
-function assoc(xs, f) {
-    let m = new Map();
-    for (let i = 0, n = xs.length; i < n; ++i) {
-        m.set(...f(xs[i], i));
-    }
-    return m;
-}
 
 const canvas = document.querySelector("canvas");
 const W = canvas.clientWidth;
@@ -39,18 +32,19 @@ const buttons = assoc(
 function coldStart() {
     const date = new Date();
     offset = date.valueOf() - date.getTimezoneOffset() * 60000;
-    clock.rate = 1;
+    clock.setRate(1);
     clock.start();
 }
 
 function setRateFromState() {
     const [dir, rate] = state.split("_");
-    clock.rate = 2 ** parseInt(rate, 10) * (dir === "forward" ? 1 : -1);
+    clock.setRate(2 ** parseInt(rate, 10) * (dir === "forward" ? 1 : -1));
     console.log(`Set clock rate: ${clock.rate}`);
 }
 
 const stop = ["stopped", () => { clock.stop(); }];
 const play = ["forward_0", setRateFromState];
+const pause = ["paused", () => { clock.pause(); }];
 
 const states = {
     stopped: {
@@ -83,14 +77,14 @@ const states = {
 
     forward_0: {
         stop,
-        pause: ["paused", () => { clock.rate = 0; }],
+        pause,
         ffwd: ["forward_1", setRateFromState],
         rwd: ["rewind_0", setRateFromState]
     },
 
     rewind_0: {
         stop,
-        pause: ["desuap", () => { clock.rate = 0; }],
+        pause: ["desuap", () => { clock.pause(); }],
         play: ["forward_0", setRateFromState],
         ffwd: ["forward_1", setRateFromState],
         rwd: ["rewind_1", setRateFromState]
@@ -101,14 +95,14 @@ const FfwdSteps = 8;
 for (let i = 1; i < FfwdSteps; ++i) {
     states[`forward_${i}`] = {
         stop,
-        pause: ["paused", () => { clock.rate = 0; }],
+        pause,
         play,
         ffwd: [`forward_${Math.max(1, (i + 1) % FfwdSteps)}`, setRateFromState],
         rwd: ["rewind_0", setRateFromState]
     };
     states[`rewind_${i}`] = {
         stop,
-        pause: ["desuap", () => { clock.rate = 0; }],
+        pause: ["desuap", () => { clock.pause(); }],
         play,
         ffwd: ["forward_1", setRateFromState],
         rwd: [`rewind_${(i + 1) % FfwdSteps}`, setRateFromState]
