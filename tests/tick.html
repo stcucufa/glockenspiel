@@ -6,33 +6,18 @@
     <body>
         <script type="module">
 
+import { test } from "./test.js";
 import { Tick } from "../lib/tick.js";
-const tick = Tick.create();
-console.log(tick.now);
 
-tick.requestUpdate(this, t => {
-    console.log("Update!", t);
-});
+test("Tick (automatic)", () => new Promise(resolve => {
+    const tick = Tick.create();
+    console.log(tick.now);
 
-            /*
-import { assoc, nop, tomap } from "../../prelude.js";
-import { expect } from "../expect.js";
-import { test } from "../test-runner.js";
-
-test("No items", () => {
-    expect(assoc([], nop)).to.deepEqual(new Map());
-});
-
-test("Distinct items", () => {
-    let h = assoc(["one", "two", "three"], (x, i) => [x, i + 1]);
-    expect(h).to.deepEqual(tomap({ one: 1, two: 2, three: 3 }));
-});
-
-test("Repeat items, last value is set", () => {
-    let h = assoc(["one", "one"], (x, i) => [x, i + 1]);
-    expect(h).to.deepEqual(tomap({ one: 2 }));
-});
-*/
+    tick.requestUpdate(this, t => {
+        console.log("Update!", t);
+        resolve();
+    });
+}));
 
         </script>
     </body>
