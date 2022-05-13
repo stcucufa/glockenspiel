@@ -7,17 +7,31 @@
         <script type="module">
 
 import { test } from "./test.js";
-import { Tick } from "../lib/tick.js";
+import { ManualTick, Tick } from "../lib/tick.js";
 
-test("Tick (automatic)", () => new Promise(resolve => {
+test("Tick (automatic)", t => new Promise(resolve => {
     const tick = Tick.create();
-    console.log(tick.now);
+    const start = tick.now;
+    t.atLeast(start, 0);
 
-    tick.requestUpdate(this, t => {
-        console.log("Update!", t);
+    tick.requestUpdate(this, updateTime => {
+        t.atLeast(updateTime, start);
         resolve();
     });
 }));
+
+test("Tick (manual)", t => {
+    const tick = ManualTick.create();
+    let lastUpdate = tick.now;
+    t.equal(lastUpdate, 0);
+
+    tick.requestUpdate(this, updateTime => {
+        lastUpdate = updateTime;
+    });
+
+    tick.tick(1);
+    t.equal(lastUpdate, 1);
+});
 
         </script>
     </body>
