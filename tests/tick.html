@@ -29,7 +29,7 @@ test("Tick (manual)", t => {
         lastUpdate = updateTime;
     });
 
-    tick.tick(1);
+    tick.advance(1);
     t.equal(lastUpdate, 1);
 });
 
