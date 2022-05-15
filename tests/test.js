@@ -6,6 +6,8 @@ const TestTimeoutMS = 3000;
 let successes = 0;
 let failures = 0;
 let timeouts = 0;
+let skips = 0;
+
 const tests = [];
 
 export function test(title, f) {
@@ -19,6 +21,10 @@ export function test(title, f) {
     }
 
     tests.push([title, f]);
+}
+
+export function skip(title) {
+    tests.push([title]);
 }
 
 const message = (msg, context) => () => (context ? `${context}: ` : "") + msg;
@@ -55,11 +61,33 @@ const Test = {
             value === expected,
             message(`expected ${show(value)} to be equal to (===) ${show(expected)}`, context)
         );
+    },
+
+    typeof(value, expected, context) {
+        this.expect(
+            typeof value === expected,
+            message(`expected ${show(value)} to be of type (typeof) ${show(expected)}`, context)
+        );
+
+    },
+
+    ok(value, context) {
+        this.expect(
+            !!value,
+            message(`expected ${show(value)} to be ok (!!)`, context)
+        );
     }
 };
 
 async function run() {
     for (const [title, test] of tests) {
+        if (!test) {
+            // Skip
+            console.log(`Skipped: "${title}"`);
+            skips += 1;
+            continue;
+        }
+
         try {
             const t = Test.create({ for: title });
             if (isAsync(test)) {
@@ -97,5 +125,5 @@ async function run() {
         }
     }
 
-    console.info(`Successes: ${successes}, failures: ${failures}, timeouts: ${timeouts}`);
+    console.info(`Successes: ${successes}, failures: ${failures}, timeouts: ${timeouts}, skipped: ${skips}`);
 }

@@ -2,7 +2,51 @@
 <html>
     <head>
         <title>Scheduler</title>
-        <script type="module" src="scheduler.js"></script>
+        <script type="module">
+
+import { test } from "./test.js";
+import { Scheduler, Inclusive } from "../lib/scheduler.js";
+
+test("Create a new scheduler", t => {
+    const scheduler = Scheduler.create();
+    t.ok(scheduler);
+});
+
+test("Add an single event with at(f, t)", t => {
+    const scheduler = Scheduler.create();
+    let happened = false;
+    scheduler.at(() => { happened = true; }, 10);
+    t.equal(happened, false, "Event does not happen when it is added");
+    scheduler.update(0, 20);
+    t.equal(happened, true, "Event happens during the update");
+});
+
+test("Update: ]from, to]", t => {
+    const scheduler = Scheduler.create();
+    let atZero = false;
+    let atOne = false;
+    scheduler.at(() => { atZero = true; }, 0);
+    scheduler.at(() => { atOne = true; }, 1);
+    scheduler.update(0, 2);
+    t.equal(atZero, false, "0 has already happened");
+    t.equal(atOne, true, "1 has happened during update");
+});
+
+test("Update: [from, to]", t => {
+    const scheduler = Scheduler.create();
+    let atZero = false;
+    let atOne = false;
+    scheduler.at(() => { atZero = true; }, 0);
+    scheduler.at(() => { atOne = true; }, 1);
+    scheduler.update(0, 2, Inclusive);
+    t.equal(atZero, true, "0 has happened during update");
+    t.equal(atOne, true, "1 has happened during update");
+});
+
+// TODO repeat events
+// TODO going backward
+
+        </script>
     </head>
     <body>
     </body>
