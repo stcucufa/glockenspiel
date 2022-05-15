@@ -1,4 +1,5 @@
 import { create, isAsync } from "../lib/util.js";
+import { show } from "../lib/show.js";
 
 const TestTimeoutMS = 3000;
 
@@ -20,35 +21,39 @@ export function test(title, f) {
     tests.push([title, f]);
 }
 
-const Test = {
-    create: create({
-        failures: []
-    }),
+const message = (msg, context) => () => (context ? `${context}: ` : "") + msg;
 
-    expect(p, message) {
+const Test = {
+    create: create(),
+
+    init() {
+        this.failures = [];
+    },
+
+    expect(p, msg) {
         if (!p) {
-            this.failures.push(message);
+            this.failures.push(msg());
         }
     },
 
-    above(value, expected) {
+    above(value, expected, context) {
         this.expect(
             value > expected,
-            `expected ${value} to be above (>) ${expected}`
+            message(`expected ${show(value)} to be above (>) ${show(expected)}`, context)
         );
     },
 
-    atLeast(value, expected) {
+    atLeast(value, expected, context) {
         this.expect(
             value >= expected,
-            `expected ${value} to be at least (>=) ${expected}`
+            message(`expected ${show(value)} to be at least (>=) ${show(expected)}`, context)
         );
     },
 
-    equal(value, expected) {
+    equal(value, expected, context) {
         this.expect(
             value === expected,
-            `expected ${value} to be equal to (===) ${expected}`
+            message(`expected ${show(value)} to be equal to (===) ${show(expected)}`, context)
         );
     }
 };
@@ -56,7 +61,7 @@ const Test = {
 async function run() {
     for (const [title, test] of tests) {
         try {
-            const t = Test.create();
+            const t = Test.create({ for: title });
             if (isAsync(test)) {
                 await test(t);
             } else {

@@ -2,7 +2,36 @@
 <html>
     <head>
         <title>Clock</title>
-        <script type="module" src="clock.js"></script>
+        <script type="module">
+
+import { test } from "./test.js";
+import { Clock } from "../lib/clock.js";
+
+test("Clock states", t => {
+    const clock = Clock.create();
+    t.equal(clock.state, Clock.States.Stopped, "initial state");
+    clock.start();
+    t.equal(clock.state, Clock.States.Running, "start() when stopped");
+    clock.stop();
+    t.equal(clock.state, Clock.States.Stopped, "stop() when running");
+    clock.start();
+    clock.pause();
+    t.equal(clock.state, Clock.States.Paused, "pause() when running");
+    clock.resume();
+    t.equal(clock.state, Clock.States.Running, "resume() when paused");
+    clock.pause();
+    clock.stop();
+    t.equal(clock.state, Clock.States.Stopped, "stop() when paused");
+    clock.start();
+    clock.pause();
+    clock.start();
+    t.equal(clock.state, Clock.States.Paused, "do not start when paused");
+    clock.stop();
+    clock.pause();
+    t.equal(clock.state, Clock.States.Stopped, "do not pause when stopped");
+});
+
+        </script>
     </head>
     <body>
     </body>
