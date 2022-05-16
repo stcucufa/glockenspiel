@@ -103,7 +103,7 @@ test("Advance time manually", t => {
     t.equal(events[2], 2, "event happened at 2");
 });
 
-skip("Skip time", t => {
+test("Skip time", t => {
     const clock = Clock.create({
         tick: ManualTick.create()
     });
@@ -120,7 +120,6 @@ skip("Skip time", t => {
     t.equal(events[1], false, "event at 1 was skipped");
     t.equal(events[2], 2, "event happened at 2");
 });
-
 
         </script>
     </head>
