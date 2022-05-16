@@ -121,6 +121,21 @@ test("Skip time", t => {
     t.equal(events[2], 2, "event happened at 2");
 });
 
+test("Stop in update loop", t => {
+    const clock = Clock.create({
+        tick: ManualTick.create()
+    });
+
+    let afterStopEvent = false;
+    clock.scheduler.at(() => { clock.stop(); }, 0);
+    clock.scheduler.at(() => { afterStopEvent = true; }, 1);
+
+    clock.start();
+    clock.tick.advance(1);
+    t.equal(clock.state, Clock.States.Stopped, "clock is stopped");
+    t.equal(afterStopEvent, false, "no event occurred after the clock stopped");
+});
+
         </script>
     </head>
     <body>

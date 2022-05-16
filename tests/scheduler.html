@@ -7,6 +7,12 @@
 import { test } from "./test.js";
 import { Scheduler, Inclusive } from "../lib/scheduler.js";
 
+function update(scheduler, from, to, inclusive) {
+    for (const [f, t] of scheduler.schedule(from, to, inclusive)) {
+        f(t, [from, to]);
+    }
+}
+
 test("Create a new scheduler", t => {
     const scheduler = Scheduler.create();
     t.ok(scheduler);
@@ -17,7 +23,7 @@ test("Add an single event with at(f, t)", t => {
     let happened = false;
     scheduler.at(() => { happened = true; }, 10);
     t.equal(happened, false, "Event does not happen when it is added");
-    scheduler.update(0, 20);
+    update(scheduler, 0, 20);
     t.equal(happened, true, "Event happens during the update");
 });
 
@@ -27,7 +33,7 @@ test("Update: ]from, to]", t => {
     let atOne = false;
     scheduler.at(() => { atZero = true; }, 0);
     scheduler.at(() => { atOne = true; }, 1);
-    scheduler.update(0, 2);
+    update(scheduler, 0, 2);
     t.equal(atZero, false, "0 has already happened");
     t.equal(atOne, true, "1 has happened during update");
 });
@@ -38,7 +44,7 @@ test("Update: [from, to]", t => {
     let atOne = false;
     scheduler.at(() => { atZero = true; }, 0);
     scheduler.at(() => { atOne = true; }, 1);
-    scheduler.update(0, 2, Inclusive);
+    update(scheduler, 0, 2, Inclusive);
     t.equal(atZero, true, "0 has happened during update");
     t.equal(atOne, true, "1 has happened during update");
 });
@@ -49,7 +55,7 @@ test("Update: ]t, t] (nothing happens)", t => {
     let second = false;
     scheduler.at(() => { first = true; }, 0);
     scheduler.at(() => { second = true; }, 0);
-    scheduler.update(0, 0);
+    update(scheduler, 0, 0);
     t.equal(first, false, "First event has not happened");
     t.equal(second, false, "Second event has not happened");
 });
@@ -60,7 +66,7 @@ test("Update: [t, t] (events happens)", t => {
     let second = false;
     scheduler.at(() => { first = true; }, 0);
     scheduler.at(() => { second = true; }, 0);
-    scheduler.update(0, 0, Inclusive);
+    update(scheduler, 0, 0, Inclusive);
     t.equal(first, true, "First event has happened");
     t.equal(second, true, "Second event has happened");
 });
