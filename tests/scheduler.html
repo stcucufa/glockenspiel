@@ -43,6 +43,28 @@ test("Update: [from, to]", t => {
     t.equal(atOne, true, "1 has happened during update");
 });
 
+test("Update: ]t, t] (nothing happens)", t => {
+    const scheduler = Scheduler.create();
+    let first = false;
+    let second = false;
+    scheduler.at(() => { first = true; }, 0);
+    scheduler.at(() => { second = true; }, 0);
+    scheduler.update(0, 0);
+    t.equal(first, false, "First event has not happened");
+    t.equal(second, false, "Second event has not happened");
+});
+
+test("Update: [t, t] (events happens)", t => {
+    const scheduler = Scheduler.create();
+    let first = false;
+    let second = false;
+    scheduler.at(() => { first = true; }, 0);
+    scheduler.at(() => { second = true; }, 0);
+    scheduler.update(0, 0, Inclusive);
+    t.equal(first, true, "First event has happened");
+    t.equal(second, true, "Second event has happened");
+});
+
 // TODO repeat events
 // TODO going backward
 
