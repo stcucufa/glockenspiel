@@ -30,27 +30,16 @@ test("Create a new clock with extra properties", t => {
     t.typeof(clock.tick.advance, "function");
 });
 
-test("Clock states", t => {
+test("Start the clock", t => {
     const clock = Clock.create();
     clock.start();
-    t.equal(clock.state, Clock.States.Running, "start() when stopped");
-    clock.stop();
-    t.equal(clock.state, Clock.States.Stopped, "stop() when running");
+    t.equal(clock.state, Clock.States.Running, "clock is running after start()");
+});
+
+test("Start the clock when rate is 0", t => {
+    const clock = Clock.create({ rate: 0 });
     clock.start();
-    clock.pause();
-    t.equal(clock.state, Clock.States.Paused, "pause() when running");
-    clock.resume();
-    t.equal(clock.state, Clock.States.Running, "resume() when paused");
-    clock.pause();
-    clock.stop();
-    t.equal(clock.state, Clock.States.Stopped, "stop() when paused");
-    clock.start();
-    clock.pause();
-    clock.start();
-    t.equal(clock.state, Clock.States.Paused, "do not start when paused");
-    clock.stop();
-    clock.pause();
-    t.equal(clock.state, Clock.States.Stopped, "do not pause when stopped");
+    t.equal(clock.state, Clock.States.Paused, "clock is paused after start() at rate 0");
 });
 
 test("Override tick", t => {
@@ -103,7 +92,7 @@ test("Advance time manually", t => {
     t.equal(events[2], 2, "event happened at 2");
 });
 
-test("Skip time", t => {
+skip("Skip time", t => {
     const clock = Clock.create({
         tick: ManualTick.create()
     });

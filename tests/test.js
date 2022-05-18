@@ -74,19 +74,19 @@ function initFrame(tests) {
     return {
         ready(e, data) {
             console.log(">>> Running tests");
-            currentLi.textContent = `${data.title}`;
+            currentLi.innerHTML = `<a href="${data.url.href}">${data.title}</a>`;
             postMessage(e.source, "run");
         },
 
         started(e, data) {
-            currentLi.textContent += ` 🌀 ${data.title ?? data.i}`;
+            currentLi.innerHTML += ` 🌀 ${data.title ?? data.i}`;
         },
 
         success(e, data) {
-            if (/🌀/.test(currentLi.textContent)) {
-                currentLi.textContent = currentLi.textContent.replace(/🌀/, "✅");
+            if (/🌀/.test(currentLi.innerHTML)) {
+                currentLi.innerHTML = currentLi.innerHTML.replace(/🌀/, "✅");
             } else {
-                currentLi.textContent += ` ✅ ${data.title ?? data.i}`;
+                currentLi.innerHTML += ` ✅ ${data.title ?? data.i}`;
             }
             this.successes += 1;
             console.log(`+++ Success, #successes: ${this.successes}`);
@@ -94,10 +94,10 @@ function initFrame(tests) {
         },
 
         failure(e, data) {
-            if (/🌀/.test(currentLi.textContent)) {
-                currentLi.textContent = currentLi.textContent.replace(/🌀/, "❌");
+            if (/🌀/.test(currentLi.innerHTML)) {
+                currentLi.innerHTML = currentLi.innerHTML.replace(/🌀/, "❌");
             } else {
-                currentLi.textContent += ` ❌ ${data.title ?? data.i}`;
+                currentLi.innerHTML += ` ❌ ${data.title ?? data.i}`;
             }
             this.failures += 1;
             console.log(`--- Failure: ${data.error}, #failures: ${this.failures}`);
@@ -105,14 +105,14 @@ function initFrame(tests) {
         },
 
         timeout(e, data) {
-            currentLi.textContent = currentLi.textContent.replace(/🌀/, "💤");
+            currentLi.innerHTML = currentLi.innerHTML.replace(/🌀/, "💤");
             this.timeouts += 1;
             console.log(`@@@ Timeout: ${data.error}, #timeouts: ${this.timeouts}`);
             postMessage(e.source, "run");
         },
 
-        skipped(e) {
-            currentLi.textContent += ` 💬 ${data.title ?? data.i}`;
+        skipped(e, data) {
+            currentLi.innerHTML += ` 💬 ${data.title ?? data.i}`;
             this.skips += 1;
             console.log(`... Skipped, #skips: ${this.skips}`);
             postMessage(e.source, "run");
@@ -134,11 +134,13 @@ function initFrame(tests) {
 }
 
 function initTest() {
-    console.log(`!!! New tests: ${document.title} (${window.location})`, testCases);
-    postMessage(window.parent, "ready", {
-        title: document.title,
-        url: window.location
-    });
+    if (window.parent !== window) {
+        console.log(`!!! New tests: ${document.title} (${window.location})`, testCases);
+        postMessage(window.parent, "ready", {
+            title: document.title,
+            url: window.location
+        });
+    }
 
     return {
         async run(e, data) {
