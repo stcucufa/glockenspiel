@@ -8,6 +8,8 @@ import { test, skip } from "./test.js";
 import { Clock } from "../lib/clock.js";
 import { ManualTick } from "../lib/tick.js";
 
+// Clock creation
+
 test("Create a new clock", t => {
     const clock = Clock.create();
     t.equal(clock.rate, 1, "default rate");
@@ -30,17 +32,7 @@ test("Create a new clock with extra properties", t => {
     t.typeof(clock.tick.advance, "function");
 });
 
-test("Start the clock", t => {
-    const clock = Clock.create();
-    clock.start();
-    t.equal(clock.state, Clock.States.Running, "clock is running after start()");
-});
-
-test("Start the clock when rate is 0", t => {
-    const clock = Clock.create({ rate: 0 });
-    clock.start();
-    t.equal(clock.state, Clock.States.Paused, "clock is paused after start() at rate 0");
-});
+// Tick
 
 test("Override tick", t => {
     const clock = Clock.create({

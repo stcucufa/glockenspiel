@@ -51,7 +51,7 @@ const TestCase = {
             !!value,
             [() => `expected ${show(value)} to be ok (!!)`, context]
         );
-    }
+    },
 };
 
 function postMessage(target, type, data = {}) {
