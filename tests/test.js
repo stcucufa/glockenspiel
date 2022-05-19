@@ -2,7 +2,7 @@ import { create, nop } from "../lib/util.js";
 import { show } from "../lib/show.js";
 
 // Lazy-evaluated message with optional context
-const message = (msg, context) => () => (context ? `${context}: ` : "") + msg;
+const message = (msg, context) => () => (context ? `${context}: ` : "") + msg();
 
 const TestCase = {
     create: create({ timeoutMs: 300 }),
@@ -11,37 +11,37 @@ const TestCase = {
         this.failures = [];
     },
 
-    expect(p, msg) {
+    expect(p, [message, context]) {
         if (!p) {
-            this.failures.push(msg());
+            this.failures.push((context ? `${context}: ` : "") + message());
         }
     },
 
     above(value, expected, context) {
         this.expect(
             value > expected,
-            message(`expected ${show(value)} to be above (>) ${show(expected)}`, context)
+            [() => `expected ${show(value)} to be above (>) ${show(expected)}`, context]
         );
     },
 
     atLeast(value, expected, context) {
         this.expect(
             value >= expected,
-            message(`expected ${show(value)} to be at least (>=) ${show(expected)}`, context)
+            [() => `expected ${show(value)} to be at least (>=) ${show(expected)}`, context]
         );
     },
 
     equal(value, expected, context) {
         this.expect(
             value === expected,
-            message(`expected ${show(value)} to be equal to (===) ${show(expected)}`, context)
+            [() => `expected ${show(value)} to be equal to (===) ${show(expected)}`, context]
         );
     },
 
     typeof(value, expected, context) {
         this.expect(
             typeof value === expected,
-            message(`expected ${show(value)} to be of type (typeof) ${show(expected)}`, context)
+            [() => `expected ${show(value)} to be of type (typeof) ${show(expected)}`, context]
         );
 
     },
@@ -49,7 +49,7 @@ const TestCase = {
     ok(value, context) {
         this.expect(
             !!value,
-            message(`expected ${show(value)} to be ok (!!)`, context)
+            [() => `expected ${show(value)} to be ok (!!)`, context]
         );
     }
 };
