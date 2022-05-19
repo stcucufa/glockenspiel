@@ -1,4 +1,4 @@
-import { create, isAsync } from "../lib/util.js";
+import { create, nop } from "../lib/util.js";
 import { show } from "../lib/show.js";
 
 // Lazy-evaluated message with optional context
@@ -134,38 +134,43 @@ function initFrame(tests) {
 }
 
 function initTest() {
-    if (window.parent !== window) {
-        console.log(`!!! New tests: ${document.title} (${window.location})`, testCases);
-        postMessage(window.parent, "ready", {
-            title: document.title,
-            url: window.location
-        });
-    }
+    console.log(`!!! New tests: ${document.title} (${window.location})`);
+    postMessage(parent, "ready", {
+        title: document.title,
+        url: window.location
+    });
 
-    return {
+    const runner = {
         async run(e, data) {
-            if (this.tests.length > 0) {
+            const n = this.tests.length;
+            if (n > 0) {
+                if (isNaN(this.testCount)) {
+                    this.testCount = n;
+                }
+
                 const [title, test] = this.tests.shift();
-                const i = this.testCount - this.tests.length;
+                const i = this.testCount - n;
                 const data = { title, i };
-                console.log(`... Running test #${i}${title ? (": \"" + title + "\"") : ""}`);
+                if (!test) {
+                    console.log(`~~~ Skipping test #${i + 1}${title ? (": \"" + title + "\"") : ""}`);
+                    postMessage(e.source, "skipped", data);
+                    return;
+                }
+
+                console.log(`... Running test #${i + 1}${title ? (": \"" + title + "\"") : ""}`);
                 const testCase = TestCase.create({ for: title });
                 try {
-                    if (!test) {
-                        postMessage(e.source, "skipped", data);
-                    } else {
-                        const promise = test(testCase);
-                        if (typeof promise?.then === "function") {
-                            postMessage(e.source, "started", data);
-                            await Promise.race([
-                                promise,
-                                new Promise((_, reject) => {
-                                    window.setTimeout(() => {
-                                        reject({ message: "Timeout", timeout: true });
-                                    }, testCase.timeoutMs);
-                                })
-                            ]);
-                        }
+                    const promise = test(testCase);
+                    if (typeof promise?.then === "function") {
+                        postMessage(e.source, "started", data);
+                        await Promise.race([
+                            promise,
+                            new Promise((_, reject) => {
+                                window.setTimeout(() => {
+                                    reject({ message: "Timeout", timeout: true });
+                                }, testCase.timeoutMs);
+                            })
+                        ]);
                     }
                     if (testCase.failures.length > 0) {
                         postMessage(
@@ -188,32 +193,72 @@ function initTest() {
             }
         },
 
-        tests: testCases,
-        testCount: testCases.length
+        tests: [],
     };
+
+    return parent !== window ? runner : Object.assign(runner, {
+        ready(e, data) {
+            console.log(`>>> Running tests: ${data.title}`);
+            postMessage(e.source, "run");
+        },
+
+        started: nop,
+
+        success(e) {
+            this.successes += 1;
+            console.log(`+++ Success, #successes: ${this.successes}`);
+            postMessage(e.source, "run");
+        },
+
+        failure(e, data) {
+            this.failures += 1;
+            console.log(`--- Failure: ${data.error}, #failures: ${this.failures}`);
+            postMessage(e.source, "run");
+        },
+
+        timeout(e, data) {
+            this.timeouts += 1;
+            console.log(`@@@ Timeout: ${data.error}, #timeouts: ${this.timeouts}`);
+            postMessage(e.source, "run");
+        },
+
+        skipped(e, data) {
+            this.skips += 1;
+            console.log(`... Skipped, #skips: ${this.skips}`);
+            postMessage(e.source, "run");
+        },
+
+        done(e) {
+            console.log(`<<< Done, #successes: ${this.successes}, #failures: ${this.failures}, #timeouts: ${this.timeouts}, #skips: ${this.skips}`);
+        },
+
+        successes: 0,
+        failures: 0,
+        timeouts: 0,
+        skips: 0
+    });
 }
 
-const testCases = [];
+const handler = (function () {
+    const tests = [...document.querySelectorAll("ul.tests")].flatMap(
+        ul => [...ul.querySelectorAll("li")]
+    );
+    const handler = tests.length > 0 ? initFrame(tests) : initTest();
+    window.addEventListener("message", e => {
+        const data = JSON.parse(e.data);
+        handler[data.type](e, data);
+    });
+    return handler;
+})();
 
 export function test(title, f) {
     if (!f) {
         f = title;
         title = "";
     }
-    testCases.push([title, f]);
+    handler.tests.push([title, f]);
 }
 
 export function skip(title) {
-    testCases.push([title]);
+    handler.tests.push([title]);
 }
-
-(function () {
-    const tests = [...document.querySelectorAll("ul.tests")].flatMap(
-        ul => [...ul.querySelectorAll("li")]
-    );
-    const handler = tests.length > 0 ? initFrame(tests) : initTest(testCases);
-    window.addEventListener("message", e => {
-        const data = JSON.parse(e.data);
-        handler[data.type](e, data);
-    });
-})();
