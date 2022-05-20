@@ -8,8 +8,6 @@ import { test, skip } from "./test.js";
 import { Clock } from "../lib/clock.js";
 import { ManualTick } from "../lib/tick.js";
 
-// Clock creation
-
 test("Create a new clock", t => {
     const clock = Clock.create();
     t.equal(clock.rate, 1, "default rate");
@@ -32,8 +30,6 @@ test("Create a new clock with extra properties", t => {
     t.typeof(clock.tick.advance, "function");
 });
 
-// Tick
-
 test("Override tick", t => {
     const clock = Clock.create({
         tick: ManualTick.create()
@@ -44,77 +40,6 @@ test("Override tick", t => {
     t.equal(clock.now, 17, "Clock advanced to 17");
     clock.tick.advance(13);
     t.equal(clock.now, 30, "Clock advanced to 30");
-});
-
-test("Advance time from clock ticks", t => {
-    const clock = Clock.create({
-        tick: ManualTick.create()
-    });
-
-    const events = [false, false, false];
-    for (let i = 0; i < events.length; ++i) {
-        clock.scheduler.at(updateTime => { events[i] = updateTime; }, i)
-    }
-
-    clock.start();
-    clock.tick.advance(1);
-    t.equal(events[0], 0, "event happened at 0");
-    t.equal(events[1], 1, "event happened at 1");
-    t.equal(events[2], false, "event not yet happened at 2");
-
-    clock.tick.advance(1);
-    t.equal(events[2], 2, "event happened at 2")
-});
-
-test("Advance time manually", t => {
-    const clock = Clock.create({
-        tick: ManualTick.create()
-    });
-
-    const events = [false, false, false];
-    for (let i = 0; i < events.length; ++i) {
-        clock.scheduler.at(updateTime => { events[i] = updateTime; }, i)
-    }
-
-    clock.start();
-    clock.advance(2);
-    clock.tick.advance(1);
-    t.equal(events[0], 0, "event happened at 0");
-    t.equal(events[1], 1, "event happened at 1");
-    t.equal(events[2], 2, "event happened at 2");
-});
-
-skip("Skip time", t => {
-    const clock = Clock.create({
-        tick: ManualTick.create()
-    });
-
-    const events = [false, false, false];
-    for (let i = 0; i < events.length; ++i) {
-        clock.scheduler.at(updateTime => { events[i] = updateTime; }, i)
-    }
-
-    clock.start();
-    clock.skip(2);
-    clock.tick.advance(1);
-    t.equal(events[0], false, "event at 0 was skipped");
-    t.equal(events[1], false, "event at 1 was skipped");
-    t.equal(events[2], 2, "event happened at 2");
-});
-
-test("Stop in update loop", t => {
-    const clock = Clock.create({
-        tick: ManualTick.create()
-    });
-
-    let afterStopEvent = false;
-    clock.scheduler.at(() => { clock.stop(); }, 0);
-    clock.scheduler.at(() => { afterStopEvent = true; }, 1);
-
-    clock.start();
-    clock.tick.advance(1);
-    t.equal(clock.state, Clock.States.Stopped, "clock is stopped");
-    t.equal(afterStopEvent, false, "no event occurred after the clock stopped");
 });
 
         </script>

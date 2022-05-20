@@ -4,6 +4,14 @@ import { show } from "../lib/show.js";
 // Lazy-evaluated message with optional context
 const message = (msg, context) => () => (context ? `${context}: ` : "") + msg();
 
+// Deep equality test
+// TODO ensure that we can compare cyclic structures
+const equal = (x, y) => typeof x !== typeof y ? false :
+    Array.isArray(x) ? equal_array(x, y) :
+        x === y;
+
+const equal_array = (x, y) => x.length === y.length && x.every((xi, i) => equal(xi, y[i]));
+
 const TestCase = {
     create: create({ timeoutMs: 300 }),
 
@@ -33,8 +41,15 @@ const TestCase = {
 
     equal(value, expected, context) {
         this.expect(
+            equal(value, expected),
+            [() => `expected ${show(value)} to be equal to ${show(expected)}`, context]
+        );
+    },
+
+    same(value, expected, context) {
+        this.expect(
             value === expected,
-            [() => `expected ${show(value)} to be equal to (===) ${show(expected)}`, context]
+            [() => `expected ${show(value)} to be the same (===) as ${show(expected)}`, context]
         );
     },
 

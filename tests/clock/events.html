@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Clock events</title>
+        <script type="module">
+
+import { test, skip } from "../test.js";
+import { sign } from "../../lib/util.js";
+import { Clock } from "../../lib/clock.js";
+import { ManualTick } from "../../lib/tick.js";
+
+test("Callback parameters", t => {
+    const clock = Clock.create({
+        tick: ManualTick.create()
+    });
+
+    let check = false;
+    clock.scheduler.at((updateTime, [from, to]) => {
+        t.equal(updateTime, 7, "callback updateTime");
+        t.equal(from, 0, "callback interval (from)");
+        t.equal(to, 17, "callback interval (to)");
+        check = true;
+    }, 7);
+
+    clock.start();
+    clock.tick.advance(17);
+    t.equal(check, true, "callback parameters were as expected");
+});
+
+test("Going forward", t => {
+    const clock = Clock.create({
+        tick: ManualTick.create()
+    });
+
+    const events = [false, false, false];
+    for (let i = 0; i < events.length; ++i) {
+        clock.scheduler.at(updateTime => { events[i] = updateTime; }, i)
+    }
+
+    clock.start();
+    clock.tick.advance(1);
+    t.equal(events[0], 0, "event happened at 0");
+    t.equal(events[1], 1, "event happened at 1");
+    t.equal(events[2], false, "event has not happened yet at 2");
+    clock.tick.advance(1);
+    t.equal(events[2], 2, "event happened at 2");
+});
+
+test("Going backward", t => {
+    const clock = Clock.create({
+        tick: ManualTick.create()
+    });
+
+    const events = [false, false, false];
+    for (let i = 0; i < events.length; ++i) {
+        clock.scheduler.at((updateTime, [from, to]) => {
+            events[i] = updateTime * sign(to - from);
+        }, i + 1)
+    }
+
+    clock.start();
+    clock.tick.advance(3);
+    t.equal(events[0], 1, "event happened at 1");
+    t.equal(events[1], 2, "event happened at 2");
+    t.equal(events[2], 3, "event happened at 3");
+    clock.tick.advance(-3);
+    t.equal(events[0], -1, "event happened again at 1");
+    t.equal(events[1], -2, "event happened again at 2");
+    t.equal(events[2], 3, "event did not happen again at 3");
+});
+
+test("Repeating event", t => {
+    const clock = Clock.create({
+        tick: ManualTick.create()
+    });
+
+    const iterations = [];
+    clock.scheduler.at(updateTime => { iterations.push(updateTime); }, 3, 5);
+
+    clock.start();
+    clock.tick.advance(7);
+    t.equal(iterations, [3], "first update");
+    clock.tick.advance(7);
+    t.equal(iterations, [3, 8, 13], "second update");
+    clock.tick.advance(-7);
+    t.equal(iterations, [3, 8, 13, 13, 8], "backward update");
+});
+
+test("Advance a paused clock", t => {
+    const clock = Clock.create({
+        tick: ManualTick.create()
+    });
+
+    let afterAdvance = false;
+    clock.scheduler.at(updateTime => { afterAdvance = updateTime }, 7);
+
+    clock.start();
+    clock.pause();
+    clock.tick.advance(1);
+    t.equal(afterAdvance, false, "No yet happened");
+    clock.advance(17);
+    clock.tick.advance(1);
+    t.equal(afterAdvance, 7, "Happened during advance");
+});
+
+test("Stop in update loop", t => {
+    const clock = Clock.create({
+        tick: ManualTick.create()
+    });
+
+    let afterStopEvent = false;
+    clock.scheduler.at(() => { clock.stop(); }, 0);
+    clock.scheduler.at(() => { afterStopEvent = true; }, 1);
+
+    clock.start();
+    clock.tick.advance(1);
+    t.equal(clock.state, Clock.States.Stopped, "clock is stopped");
+    t.equal(afterStopEvent, false, "no event occurred after the clock stopped");
+});
+
+// TODO *Pause in update loop
+// TODO Advance
+// TODO *Skip
+
+
+        </script>
+    </head>
+    <body>
+    </body>
+</html>
