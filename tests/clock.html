@@ -11,7 +11,8 @@ import { ManualTick } from "../lib/tick.js";
 test("Create a new clock", t => {
     const clock = Clock.create();
     t.equal(clock.rate, 1, "default rate");
-    t.equal(clock.state, Clock.States.Stopped, "initial state");
+    t.equal(clock.running, false, "initial state");
+    t.equal(clock.now, 0, "initial time");
     t.ok(clock.tick, "default tick");
     t.ok(clock.scheduler, "default scheduler");
 });
@@ -20,26 +21,14 @@ test("Create a new clock with extra properties", t => {
     const clock = Clock.create({
         for: "testing",
         rate: 2,
-        state: "invalid",
+        running: "yes",
         tick: ManualTick.create()
     });
 
     t.equal(clock.for, "testing", "custom properties");
     t.equal(clock.rate, 2, "initial rate is overridden");
-    t.equal(clock.state, Clock.States.Stopped, "initial state is not overridden");
-    t.typeof(clock.tick.advance, "function");
-});
-
-test("Override tick", t => {
-    const clock = Clock.create({
-        tick: ManualTick.create()
-    });
-    clock.start();
-    t.equal(clock.now, 0, "Clock starts at 0");
-    clock.tick.advance(17);
-    t.equal(clock.now, 17, "Clock advanced to 17");
-    clock.tick.advance(13);
-    t.equal(clock.now, 30, "Clock advanced to 30");
+    t.equal(clock.running, false, "initial state is not overridden");
+    t.typeof(clock.tick.advance, "function", "manual tick");
 });
 
         </script>
