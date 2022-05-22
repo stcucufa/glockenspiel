@@ -21,7 +21,6 @@ test("Create a new clock with extra properties", t => {
     const clock = Clock.create({
         for: "testing",
         rate: 2,
-        running: "yes",
         tick: ManualTick.create()
     });
 
@@ -30,6 +29,8 @@ test("Create a new clock with extra properties", t => {
     t.equal(clock.running, false, "initial state is not overridden");
     t.typeof(clock.tick.advance, "function", "manual tick");
 });
+
+
 
         </script>
     </head>

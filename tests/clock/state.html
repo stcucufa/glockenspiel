@@ -36,59 +36,16 @@ test("Stop a running clock", t => {
     t.equal(pendingUpdate(clock), false, "no pending update");
 });
 
-skip("Pause the clock", t => {
-    const clock = Clock.create({
-        tick: ManualTick.create(),
-        rate: 2
-    });
+skip("Resume a stopped clock", t => {
+    const clock = manualClock();
     clock.start();
-    t.equal(pendingUpdate(clock), true, "pending update when playing");
-    clock.pause();
-    t.equal(clock.state, Clock.States.Paused, "clock is paused after pause()");
-    t.equal(clock.rate, 0, "clock rate is zero when paused");
-    t.equal(pendingUpdate(clock), true, "still pending update when paused");
-    clock.tick.advance(1);
-    t.equal(clock.state, Clock.States.Paused, "clock is paused after update");
-    t.equal(pendingUpdate(clock), false, "no pending update when paused");
-});
-
-skip("Stop a paused clock", t => {
-    const clock = Clock.create({
-        tick: ManualTick.create()
-    });
-    clock.start();
-    clock.pause();
+    clock.tick.advance(17);
     clock.stop();
-    t.equal(clock.state, Clock.States.Stopped, "clock is stopped after stop()");
-    t.equal(pendingUpdate(clock), true, "pending update after start");
     clock.tick.advance(1);
-    t.equal(clock.state, Clock.States.Stopped, "clock is still stopped");
-    t.equal(pendingUpdate(clock), false, "no pending update after stopping");
-});
-
-skip("Stop a paused clock (after update)", t => {
-    const clock = Clock.create({
-        tick: ManualTick.create(),
-        rate: 2
-    });
-    clock.start();
-    clock.pause();
-    clock.tick.advance(1);
-    clock.stop();
-    t.equal(clock.state, Clock.States.Stopped, "clock is stopped after stop()");
-    t.equal(pendingUpdate(clock), true, "pending update after stop (really)");
-    t.equal(clock.rate, 2, "clock rate is restored after stop()");
-});
-
-skip("Resume a paused clock", t => {
-    const clock = Clock.create({
-        tick: ManualTick.create(),
-        rate: 2
-    });
-    clock.start();
-    clock.pause();
-    clock.resume();
-    t.equal(clock.state, Clock.States.Running, "clock is running after resume()");
+    t.equal(pendingUpdate(clock), false, "clock is stopped");
+    t.equal(clock.now, 18, "clock stopped at 18");
+    
+    t.equal(clock.running, true, "clock is running after resume()");
     t.equal(pendingUpdate(clock), true, "pending update after resume");
     t.equal(clock.rate, 2, "clock rate is restored after resume()");
 });
