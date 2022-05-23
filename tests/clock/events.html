@@ -4,16 +4,12 @@
         <title>Clock events</title>
         <script type="module">
 
-import { test, skip } from "../test.js";
 import { sign } from "../../lib/util.js";
-import { Clock } from "../../lib/clock.js";
-import { ManualTick } from "../../lib/tick.js";
+import { test, skip } from "../test.js";
+import { manualClock, pendingUpdate } from "./util.js";
 
 test("Callback parameters", t => {
-    const clock = Clock.create({
-        tick: ManualTick.create()
-    });
-
+    const clock = manualClock();
     let check = false;
     clock.scheduler.at((updateTime, [from, to]) => {
         t.equal(updateTime, 7, "callback updateTime");
@@ -27,11 +23,8 @@ test("Callback parameters", t => {
     t.equal(check, true, "callback parameters were as expected");
 });
 
-test("Going forward", t => {
-    const clock = Clock.create({
-        tick: ManualTick.create()
-    });
-
+test("Going forward through several events", t => {
+    const clock = manualClock();
     const events = [false, false, false];
     for (let i = 0; i < events.length; ++i) {
         clock.scheduler.at(updateTime => { events[i] = updateTime; }, i)
@@ -47,10 +40,7 @@ test("Going forward", t => {
 });
 
 test("Going backward", t => {
-    const clock = Clock.create({
-        tick: ManualTick.create()
-    });
-
+    const clock = manualClock();
     const events = [false, false, false];
     for (let i = 0; i < events.length; ++i) {
         clock.scheduler.at((updateTime, [from, to]) => {
@@ -70,10 +60,7 @@ test("Going backward", t => {
 });
 
 test("Repeating event", t => {
-    const clock = Clock.create({
-        tick: ManualTick.create()
-    });
-
+    const clock = manualClock();
     const iterations = [];
     clock.scheduler.at(updateTime => { iterations.push(updateTime); }, 3, 5);
 
@@ -86,42 +73,45 @@ test("Repeating event", t => {
     t.equal(iterations, [3, 8, 13, 13, 8], "backward update");
 });
 
-test("Advance a paused clock", t => {
-    const clock = Clock.create({
-        tick: ManualTick.create()
-    });
-
-    let afterAdvance = false;
-    clock.scheduler.at(updateTime => { afterAdvance = updateTime }, 7);
+test("Advance a running clock", t => {
+    const clock = manualClock();
+    const iterations = [];
+    clock.scheduler.at(updateTime => { iterations.push(updateTime); }, 3, 5);
 
     clock.start();
-    clock.pause();
-    clock.tick.advance(1);
-    t.equal(afterAdvance, false, "No yet happened");
-    clock.advance(17);
-    clock.tick.advance(1);
-    t.equal(afterAdvance, 7, "Happened during advance");
+    clock.tick.advance(7);
+    t.equal(iterations, [3], "first update");
+    clock.advance(5);
+    clock.tick.advance(7);
+    t.equal(iterations, [3, 8, 13, 18], "second update; advanced");
 });
 
-test("Stop in update loop", t => {
-    const clock = Clock.create({
-        tick: ManualTick.create()
-    });
-
-    let afterStopEvent = false;
-    clock.scheduler.at(() => { clock.stop(); }, 0);
-    clock.scheduler.at(() => { afterStopEvent = true; }, 1);
+test("Advance a running clock (rate=0)", t => {
+    const clock = manualClock();
+    const iterations = [];
+    clock.scheduler.at(updateTime => { iterations.push(updateTime); }, 3, 5);
 
     clock.start();
-    clock.tick.advance(1);
-    t.equal(clock.state, Clock.States.Stopped, "clock is stopped");
-    t.equal(afterStopEvent, false, "no event occurred after the clock stopped");
+    clock.tick.advance(7);
+    t.equal(iterations, [3], "first update");
+    clock.setRate(0);
+    clock.advance(5);
+    clock.tick.advance(7);
+    t.equal(iterations, [3, 8], "second update; advanced");
 });
 
-// TODO *Pause in update loop
-// TODO Advance
-// TODO *Skip
+test("Skip with a running clock", t => {
+    const clock = manualClock();
+    const iterations = [];
+    clock.scheduler.at(updateTime => { iterations.push(updateTime); }, 3, 5);
 
+    clock.start();
+    clock.tick.advance(7);
+    t.equal(iterations, [3], "first update");
+    clock.skip(6);
+    clock.tick.advance(7);
+    t.equal(iterations, [3, 13, 18], "second update; advanced");
+});
 
         </script>
     </head>

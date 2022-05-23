@@ -4,12 +4,8 @@
         <title>Clock state</title>
         <script type="module">
 
-import { test, skip } from "../test.js";
-import { Clock } from "../../lib/clock.js";
-import { ManualTick } from "../../lib/tick.js";
-
-const manualClock = () => Clock.create({ tick: ManualTick.create() });
-const pendingUpdate = clock => !!clock.tick.request;
+import { test } from "../test.js";
+import { manualClock, pendingUpdate } from "./util.js";
 
 test("Stopped clock", t => {
     const clock = manualClock();
@@ -69,7 +65,7 @@ test("Resume a stopped clock (after update)", t => {
 });
 
 test("setRate (stopped)", t => {
-    const clock = Clock.create();
+    const clock = manualClock();
     clock.rate = 2;
     t.equal(clock.rate, 2, "rate was set to 2");
     t.equal(pendingUpdate(clock), false, "no pending update");
@@ -94,6 +90,19 @@ test("setRate (running)", t => {
     clock.setRate(-1);
     clock.tick.advance(1);
     t.equal(clock.now, 4, "clock back at 4 (rate=-1)");
+});
+
+test("setRate (running, multiple changes in a single update)", t => {
+    const clock = manualClock();
+    clock.start();
+    clock.tick.skip(1);
+    clock.setRate(4);
+    clock.tick.skip(1);
+    clock.setRate(0);
+    clock.tick.skip(2);
+    clock.setRate(-1);
+    clock.tick.advance(1);
+    t.equal(clock.now, 4, "clock ends up at 4");
 });
 
 test("Advance a running clock", t => {
