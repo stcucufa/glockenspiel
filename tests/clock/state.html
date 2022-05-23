@@ -11,18 +11,23 @@ import { ManualTick } from "../../lib/tick.js";
 const manualClock = () => Clock.create({ tick: ManualTick.create() });
 const pendingUpdate = clock => !!clock.tick.request;
 
-test("Start the clock", t => {
-    const clock = Clock.create();
-    clock.start();
-    t.equal(clock.running, true, "clock is running after start()");
-    t.equal(pendingUpdate(clock), true, "pending update after start");
+test("Stopped clock", t => {
+    const clock = manualClock();
+    t.equal(clock.running, false, "clock is not running by default");
+    t.equal(clock.now, 0, "clock starts at 0");
+    clock.tick.advance(1);
+    t.equal(clock.running, false, "clock is still not running");
+    t.equal(clock.now, 0, "clock stays at 0");
 });
 
-test("Start the clock when rate is 0", t => {
-    const clock = Clock.create({ rate: 0 });
+test("Start the clock", t => {
+    const clock = manualClock();
     clock.start();
     t.equal(clock.running, true, "clock is running after start()");
-    t.equal(pendingUpdate(clock), true, "always pending update after state change");
+    t.equal(clock.now, 0, "clock starts at 0");
+    clock.tick.advance(1);
+    t.equal(clock.now, 1, "clock now at 1");
+    t.equal(pendingUpdate(clock), true, "pending update");
 });
 
 test("Stop a running clock", t => {
@@ -30,95 +35,131 @@ test("Stop a running clock", t => {
     clock.start();
     clock.stop();
     t.equal(clock.running, false, "clock is stopped after stop()");
-    t.equal(pendingUpdate(clock), true, "pending update after state change");
     clock.tick.advance(1);
     t.equal(clock.running, false, "clock is still stopped");
     t.equal(pendingUpdate(clock), false, "no pending update");
 });
 
-skip("Resume a stopped clock", t => {
+test("Resume a stopped clock (before update)", t => {
+    const clock = manualClock();
+    clock.start();
+    clock.stop();
+    clock.tick.advance(1);
+    t.equal(clock.now, 0, "clock stopped at 0");
+    clock.start();
+    t.equal(clock.running, true, "clock is running after resume()");
+    clock.tick.advance(1);
+    t.equal(clock.now, 1, "clock now at 1");
+    t.equal(pendingUpdate(clock), true, "pending update");
+});
+
+test("Resume a stopped clock (after update)", t => {
     const clock = manualClock();
     clock.start();
     clock.tick.advance(17);
+    t.equal(clock.now, 17, "clock stopped at 17");
     clock.stop();
     clock.tick.advance(1);
-    t.equal(pendingUpdate(clock), false, "clock is stopped");
-    t.equal(clock.now, 18, "clock stopped at 18");
-    
+    t.equal(clock.now, 17, "clock still stopped at 17");
+    clock.start();
     t.equal(clock.running, true, "clock is running after resume()");
-    t.equal(pendingUpdate(clock), true, "pending update after resume");
-    t.equal(clock.rate, 2, "clock rate is restored after resume()");
+    clock.tick.advance(1);
+    t.equal(clock.now, 18, "clock now at 18");
+    t.equal(pendingUpdate(clock), true, "pending update");
 });
 
-skip("Resume a paused clock (after update)", t => {
-    const clock = Clock.create({
-        tick: ManualTick.create(),
-        rate: 2
-    });
-    clock.start();
-    clock.pause();
-    clock.tick.advance(1);
-    clock.resume();
-    t.equal(clock.state, Clock.States.Running, "clock is running after resume()");
-    t.equal(pendingUpdate(clock), true, "pending update after resume");
-    t.equal(clock.rate, 2, "clock rate is restored after resume()");
-});
-
-skip("Advance a paused clock", t => {
-    const clock = Clock.create({
-        tick: ManualTick.create()
-    });
-    clock.start();
-    clock.pause();
-    clock.tick.advance(1);
-    t.equal(clock.state, Clock.States.Paused, "clock is paused");
-    t.equal(pendingUpdate(clock), false, "no pending update after pause()");
-    clock.advance(17);
-    clock.tick.advance(1);
-    t.equal(clock.state, Clock.States.Paused, "clock is paused");
+test("setRate (stopped)", t => {
+    const clock = Clock.create();
+    clock.rate = 2;
+    t.equal(clock.rate, 2, "rate was set to 2");
     t.equal(pendingUpdate(clock), false, "no pending update");
-    t.equal(clock.now, 17, "clock rate is zero when paused");
+    clock.rate = 0;
+    t.equal(clock.rate, 0, "rate was set to 0");
+    t.equal(pendingUpdate(clock), false, "still no pending update");
 });
 
-skip("Advance a running clock", t => {
-    const clock = Clock.create({
-        tick: ManualTick.create()
-    });
+test("setRate (running)", t => {
+    const clock = manualClock();
     clock.start();
     clock.tick.advance(1);
-    t.equal(clock.state, Clock.States.Running, "clock is paused");
+    t.equal(clock.now, 1, "clock at 1");
+    clock.setRate(4);
+    clock.tick.advance(1);
+    t.equal(clock.now, 5, "clock at 5 (rate=4)");
+    clock.setRate(0);
+    clock.tick.advance(1);
+    t.equal(clock.now, 5, "clock still at 5 (rate=0)");
+    clock.tick.advance(1);
+    t.equal(clock.now, 5, "clock still still at 5 (rate=0)");
+    clock.setRate(-1);
+    clock.tick.advance(1);
+    t.equal(clock.now, 4, "clock back at 4 (rate=-1)");
+});
+
+test("Advance a running clock", t => {
+    const clock = manualClock();
+    clock.start();
+    clock.tick.advance(1);
     t.equal(clock.now, 1, "time moving at normal rate");
     clock.advance(17);
+    t.equal(clock.now, 18, "time advanced before the clock tick");
     clock.tick.advance(1);
-    t.equal(clock.now, 19, "time advanced artificially and naturally");
+    t.equal(clock.now, 19, "time moving normally");
 });
 
-skip("Skip time when paused", t => {
-    const clock = Clock.create({
-        tick: ManualTick.create()
-    });
+test("Advance a running clock (zero rate)", t => {
+    const clock = manualClock();
+    clock.rate = 0;
     clock.start();
-    clock.pause();
     clock.tick.advance(1);
-    t.equal(clock.state, Clock.States.Paused, "clock is paused");
-    t.equal(pendingUpdate(clock), false, "no pending update after pause()");
-    clock.skip(17);
-    t.equal(clock.state, Clock.States.Paused, "clock is paused");
-    t.equal(pendingUpdate(clock), false, "no pending update");
-    t.equal(clock.now, 17, "clock rate is zero when paused");
+    t.equal(clock.now, 0, "clock is not moving");
+    clock.advance(17);
+    t.equal(clock.now, 17, "time advanced before the clock tick");
+    clock.tick.advance(1);
+    t.equal(clock.now, 17, "time not moving");
 });
 
-skip("Skip time when running", t => {
-    const clock = Clock.create({
-        tick: ManualTick.create()
-    });
+test("Advance a stopped clock (skip)", t => {
+    const clock = manualClock();
+    clock.tick.advance(1);
+    t.equal(clock.now, 0, "clock is not moving");
+    clock.advance(17);
+    t.equal(clock.now, 17, "time advanced before the clock tick");
+    clock.tick.advance(1);
+    t.equal(clock.now, 17, "time not moving");
+});
+
+test("Skip time when running", t => {
+    const clock = manualClock();
     clock.start();
     clock.tick.advance(1);
-    t.equal(clock.state, Clock.States.Running, "clock is paused");
     t.equal(clock.now, 1, "time moving at normal rate");
     clock.skip(17);
+    t.equal(clock.now, 18, "time advanced before the clock tick");
     clock.tick.advance(1);
-    t.equal(clock.now, 19, "time advanced artificially and naturally");
+    t.equal(clock.now, 19, "time moving normally");
+});
+
+test("Skip time when running (zero rate)", t => {
+    const clock = manualClock();
+    clock.rate = 0;
+    clock.start();
+    clock.tick.advance(1);
+    t.equal(clock.now, 0, "clock is not moving");
+    clock.advance(17);
+    t.equal(clock.now, 17, "time advanced before the clock tick");
+    clock.tick.advance(1);
+    t.equal(clock.now, 17, "time not moving");
+});
+
+test("Skip time when stopped", t => {
+    const clock = manualClock();
+    clock.tick.advance(1);
+    t.equal(clock.now, 0, "clock is not moving");
+    clock.skip(17);
+    t.equal(clock.now, 17, "time advanced before the clock tick");
+    clock.tick.advance(1);
+    t.equal(clock.now, 17, "time not moving");
 });
 
         </script>
