@@ -74,17 +74,29 @@ function postMessage(target, type, data = {}) {
 }
 
 function initFrame(tests) {
+    function nextTest() {
+        if (tests.length > 0) {
+            run(tests.shift());
+        } else {
+            console.info("### Ran all tests.");
+        }
+    }
+
     const iframe = document.body.appendChild(document.createElement("iframe"));
+    iframe.addEventListener("load", () => {
+        if (!iframe.contentDocument.querySelector("script")) {
+            console.log(`??? No tests for ${iframe.src}`);
+            currentLi.innerHTML = `<span class="notests">${currentLi.textContent}</span>`;
+            nextTest();
+        }
+    });
 
     let currentLi;
     function run(li) {
         currentLi = li;
         iframe.src = li.textContent;
     }
-
-    if (tests.length > 0) {
-        run(tests.shift());
-    }
+    nextTest();
 
     return {
         ready(e, data) {
@@ -135,9 +147,7 @@ function initFrame(tests) {
 
         done(e) {
             console.log(`<<< Done, #successes: ${this.successes}, #failures: ${this.failures}, #timeouts: ${this.timeouts}, #skips: ${this.skips}`);
-            if (tests.length > 0) {
-                run(tests.shift());
-            }
+            nextTest();
         },
 
         successes: 0,

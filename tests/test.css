@@ -15,3 +15,7 @@ ul.tests li {
 iframe {
     display: none;
 }
+
+.notests {
+    text-decoration: line-through;
+}
