@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Transport</title>
+        <script type="module">
+
+import { test, skip } from "./test.js";
+import { on } from "../lib/events.js";
+import { Transport } from "../lib/transport.js";
+
+test("Initial state", t => {
+    const transport = Transport.create();
+    t.same(transport.state, Transport.States.stopped, "initial state is stopped");
+});
+
+test("Play", t => {
+    const transport = Transport.create();
+    let state = transport.state;
+    on(transport, "start", ({ source }) => { state = source.state; });
+    transport.play();
+    t.same(transport.state, Transport.States.forward_0, "playing forward at rate=2**0");
+    t.same(transport.state, state, "got the message");
+});
+
+        </script>
+    </head>
+    <body>
+    </body>
+</html>

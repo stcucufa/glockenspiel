@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Transport bar</title>
+        <style>
+
+body {
+    margin: 2em;
+}
+
+body, button {
+    font-family: Univers, ui-sans-serif, sans-serif;
+}
+
+ul.buttons {
+    list-style-type: none;
+}
+
+ul.buttons li {
+    display: inline;
+}
+
+
+        </style>
+        <script type="module">
+
+import { assoc } from "../../lib/util.js";
+import { on } from "../../lib/events.js";
+import { Clock } from "../../lib/clock.js";
+import { Transport } from "../../lib/transport.js";
+
+const clock = Clock.create();
+const transport = Transport.create();
+const span = document.querySelector("li span");
+
+function pushed(action) {
+    transport[action]();
+    for (const [name, button] of buttons.entries()) {
+        button.disabled = !(name in transport.state);
+    }
+}
+
+const buttons = assoc(
+    document.querySelectorAll("ul.buttons button"),
+    button => {
+        button.addEventListener("click", () => { pushed(button.name); });
+        return [button.name, button];
+    }
+);
+
+on(clock, "update", () => { span.textContent = (Math.round(clock.now / 100) / 10).toFixed(1); });
+on(transport, "start", () => { clock.start(); });
+on(transport, "stop", () => { clock.stop(); });
+
+pushed("play");
+
+
+        </script>
+    </head>
+    <body>
+        <ul class="buttons">
+            <li><button type="button" name="stop">⏹ Stop</button></li>
+            <li><button type="button" name="play">▶️ Play</button></li>
+            <!--
+            <li><button type="button" name="pause">⏸ Pause</button></li>
+            <li><button type="button" name="step">⏯ Step</button></li>
+            <li><button type="button" name="rewind">⏪ Rewind</button></li>
+            <li><button type="button" name="fastForward">⏩ Ffwd</button></li>
+            -->
+            <li><span>Current time</span></li>
+        </ul>
+    </body>
+</html>
