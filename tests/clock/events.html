@@ -5,6 +5,7 @@
         <script type="module">
 
 import { sign } from "../../lib/util.js";
+import { on } from "../../lib/events.js";
 import { test, skip } from "../test.js";
 import { manualClock, pendingUpdate } from "./util.js";
 
@@ -111,6 +112,16 @@ test("Skip with a running clock", t => {
     clock.skip(6);
     clock.tick.advance(7);
     t.equal(iterations, [3, 13, 18], "second update; advanced");
+});
+
+test("Update notification", t => {
+    const clock = manualClock();
+    let updateNotification = null;
+    on(clock, "update", e => { updateNotification = e; });
+
+    clock.start();
+    clock.tick.advance(1);
+    t.same(updateNotification.source, clock, "Update notification from clock");
 });
 
         </script>

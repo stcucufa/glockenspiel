@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Events</title>
+        <script type="module">
+
+import { test } from "./test.js";
+import { on, once, off, notify, notifyAsync } from "../lib/events.js";
+
+test("on", t => {
+    const target = {};
+    let ready = false;
+    on(target, "ready", () => { ready = true; });
+    notify(target, "ready");
+    t.equal(ready, true, "ready event occurred");
+});
+
+test("once", t => {
+    const target = {};
+    let notifications = 0;
+    const handler = () => { notifications += 1; };
+    once(target, "repeat", handler);
+    notify(target, "repeat");
+    notify(target, "repeat");
+    notify(target, "repeat");
+    t.equal(notifications, 1, "repeat event was listened to only once");
+});
+
+test("off", t => {
+    const target = {};
+    let notifications = 0;
+    const handler = () => { notifications += 1; };
+    on(target, "repeat", handler);
+    notify(target, "repeat");
+    notify(target, "repeat");
+    notify(target, "repeat");
+    t.equal(notifications, 3, "repeat event occurred three times");
+    off(target, "repeat", handler);
+    notify(target, "repeat");
+    notify(target, "repeat");
+    t.equal(notifications, 3, "stopped listening after three times");
+});
+
+test("notify", t => {
+    const target = {};
+    let args = null;
+    on(target, "ready", e => { args = e; });
+    notify(target, "ready", { foo: 1, bar: 2 });
+    t.same(args.source, target, "event source");
+    t.equal(args.type, "ready", "event type");
+    t.equal(args.foo, 1, "event arg (foo)");
+    t.equal(args.bar, 2, "event arg (bar)");
+});
+
+test("notifyAsync", async t => {
+    const target = {};
+    let args = null;
+    on(target, "ready", e => { args = e; });
+    await notifyAsync(target, "ready", { foo: 1, bar: 2 });
+    t.same(args.source, target, "event source");
+    t.equal(args.type, "ready", "event type");
+    t.equal(args.foo, 1, "event arg (foo)");
+    t.equal(args.bar, 2, "event arg (bar)");
+});
+
+test("Several handlers", t => {
+    const target = {};
+    let a = false;
+    let b = false;
+    on(target, "ready", () => { a = true; });
+    on(target, "ready", () => { b = true; });
+    notify(target, "ready");
+    t.equal(a, true, "ready event occurred, seen by a");
+    t.equal(b, true, "ready event occurred, seen by b");
+});
+
+test("Several targets", t => {
+    const a = { name: "a" };
+    const b = { name: "b" };
+    let notifications = "";
+    const handler = e => { notifications += e.source.name; };
+    on(a, "repeat", handler);
+    on(b, "repeat", handler);
+    notify(a, "repeat");
+    notify(a, "repeat");
+    notify(b, "repeat");
+    notify(a, "repeat");
+    notify(b, "repeat");
+    t.equal(notifications, "aabab", "repeat notifications received in the right order");
+    off(b, "repeat", handler);
+    notify(a, "repeat");
+    notify(b, "repeat");
+    t.equal(notifications, "aababa", "stopped listening to b");
+});
+
+        </script>
+    </head>
+    <body>
+    </body>
+</html>
