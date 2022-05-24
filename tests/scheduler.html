@@ -71,7 +71,30 @@ test("Update: [t, t] (events happens)", t => {
     t.equal(second, true, "Second event has happened");
 });
 
-// TODO repeat events
+test("Update: repeat events, starting at zero", t => {
+    const scheduler = Scheduler.create();
+    let updateTimes = [];
+    scheduler.at(updateTime => { updateTimes.push(updateTime); }, 0, 5);
+    update(scheduler, 0, 7, Inclusive);
+    t.equal(updateTimes, [0, 5], "First round of updates");
+    update(scheduler, 7, 14);
+    t.equal(updateTimes, [0, 5, 10], "Second round of updates");
+    update(scheduler, 14, 21);
+    t.equal(updateTimes, [0, 5, 10, 15, 20], "Third round of updates");
+});
+
+test("Update: repeat events, starting after zero", t => {
+    const scheduler = Scheduler.create();
+    let updateTimes = [];
+    scheduler.at(updateTime => { updateTimes.push(updateTime); }, 13, 5);
+    update(scheduler, 0, 7, Inclusive);
+    t.equal(updateTimes, [3], "First round of updates");
+    update(scheduler, 7, 14);
+    t.equal(updateTimes, [3, 8, 13], "Second round of updates");
+    update(scheduler, 14, 21);
+    t.equal(updateTimes, [3, 8, 13, 18], "Third round of updates");
+});
+
 // TODO going backward
 
         </script>
