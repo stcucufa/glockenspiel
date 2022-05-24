@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Tomato animation at 9 fps</title>
+        <style>
+
+body {
+    margin: 2em;
+    font-family: Univers, ui-sans-serif, sans-serif;
+}
+
+        </style>
+        <script type="module">
+
+import { imagePromise, range } from "../../lib/util.js";
+import { Clock } from "../../lib/clock.js";
+
+play(Promise.all(
+    range(1, 18).map(i => imagePromise(`img/tomato${i.toString().padStart(2, "0")}.png`))
+));
+
+async function play(imagesPromise) {
+    const canvas = document.querySelector("canvas");
+    const context = canvas.getContext("2d");
+    const clock = Clock.create();
+
+    let imageIndex = 0;
+    // TODO schedule at a given FPS
+    // TODO add transport bar
+    clock.scheduler.at(() => {
+        const image = images[imageIndex];
+        imageIndex = (imageIndex + 1) % images.length;
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        context.drawImage(image, 0, 0);
+    }, 0, 1000 / 9);
+
+    const images = await imagesPromise;
+    clock.start();
+    setTimeout(() => { clock.stop(); }, 7777);
+}
+
+        </script>
+    </head>
+    <body>
+        <canvas></canvas>
+        <p>Play a looping animation at 9 frames per second, and stop after
+        around 7.777s.</p>
+    </body>
+</html>

@@ -46,6 +46,17 @@ const TestCase = {
         );
     },
 
+    fail(message = "failed") {
+        this.failures.push(message);
+    },
+
+    instanceof(value, expected, context) {
+        this.expect(
+            value instanceof expected,
+            [() => `expected ${show(value)} to be an instance of ${show(expected)}`, context]
+        );
+    },
+
     same(value, expected, context) {
         this.expect(
             value === expected,
@@ -58,7 +69,6 @@ const TestCase = {
             typeof value === expected,
             [() => `expected ${show(value)} to be of type (typeof) ${show(expected)}`, context]
         );
-
     },
 
     ok(value, context) {
