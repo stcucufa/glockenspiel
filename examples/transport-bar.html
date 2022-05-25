@@ -51,6 +51,8 @@ const buttons = assoc(
 on(clock, "update", () => { span.textContent = (Math.round(clock.now / 100) / 10).toFixed(1); });
 on(transport, "start", () => { clock.start(); });
 on(transport, "stop", () => { clock.stop(); });
+on(transport, "pause", () => { clock.setRate(0); });
+on(transport, "setRate", ({ rate }) => { clock.setRate(rate); })
 
 pushed("play");
 
@@ -61,8 +63,8 @@ pushed("play");
         <ul class="buttons">
             <li><button type="button" name="stop">⏹ Stop</button></li>
             <li><button type="button" name="play">▶️ Play</button></li>
-            <!--
             <li><button type="button" name="pause">⏸ Pause</button></li>
+            <!--
             <li><button type="button" name="step">⏯ Step</button></li>
             <li><button type="button" name="rewind">⏪ Rewind</button></li>
             <li><button type="button" name="fastForward">⏩ Ffwd</button></li>

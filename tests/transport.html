@@ -22,6 +22,21 @@ test("Play", t => {
     t.same(transport.state, state, "got the message");
 });
 
+test("Pause and resume", t => {
+    const transport = Transport.create();
+    let playing = null;
+    let rate = null;
+    on(transport, "start", () => { playing = true; });
+    on(transport, "pause", () => { rate = 0; });
+    on(transport, "setRate", e => { rate = e.rate; });
+    transport.play();
+    transport.pause();
+    t.equal(playing, true, "playback has started");
+    t.equal(rate, 0, "playback rate is 0 (paused)");
+    transport.play();
+    t.equal(rate, 1, "playback rate is 1 (resumed)");
+});
+
         </script>
     </head>
     <body>
