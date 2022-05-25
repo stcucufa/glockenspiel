@@ -2,6 +2,7 @@
 <html>
     <head>
         <title>Transport bar</title>
+        <meta charset="utf-8">
         <style>
 
 body {
@@ -12,6 +13,10 @@ body, button {
     font-family: Univers, ui-sans-serif, sans-serif;
 }
 
+button {
+    font-size: 1rem;
+}
+
 ul.buttons {
     list-style-type: none;
 }
@@ -20,6 +25,16 @@ ul.buttons li {
     display: inline;
 }
 
+svg.symbols {
+    display: none;
+}
+
+svg.icon {
+    width: 1em;
+    height: 1em;
+    display: inline-block;
+    vertical-align: -.125em;
+}
 
         </style>
         <script type="module">
@@ -48,28 +63,104 @@ const buttons = assoc(
     }
 );
 
-on(clock, "update", () => { span.textContent = (Math.round(clock.now / 100) / 10).toFixed(1); });
+const updateDisplay = () => {
+    span.textContent = `[×${clock.rate}] ${(Math.round(clock.now / 100) / 10).toFixed(1)}`;
+}
+
+on(clock, "update", updateDisplay);
+
+on(transport, "advance", ({ amount }) => { clock.advance(amount * 1000); });
+on(transport, "pause", () => { clock.setRate(0); });
+on(transport, "reset", () => {
+    clock.skip(-clock.now);
+    updateDisplay();
+});
+on(transport, "setRate", ({ rate }) => { clock.setRate(rate); })
 on(transport, "start", () => { clock.start(); });
 on(transport, "stop", () => { clock.stop(); });
-on(transport, "pause", () => { clock.setRate(0); });
-on(transport, "setRate", ({ rate }) => { clock.setRate(rate); })
 
 pushed("play");
-
 
         </script>
     </head>
     <body>
+        <svg xmlns="http://www.w3.org/2000/svg" class="symbols">
+            <symbol id="stop" viewBox="0 0 100 100">
+                <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
+                    d="M20,20v60h60v-60z"/>
+            </symbol>
+            <symbol id="play" viewBox="0 0 100 100">
+                <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
+                    d="M15.359,10v80L69.282,50z"/>
+            </symbol>
+            <symbol id="pause" viewBox="0 0 100 100">
+                <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
+                    d="M20,20v60h20v-60z M60,20v60h20v-60z"/>
+            </symbol>
+            <symbol id="step" viewBox="0 0 100 100">
+                <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
+                    d="M0,20v60L50,50z M52,20v60h10v-60z M92,20v60h-10v-60z"/>
+            </symbol>
+            <symbol id="rewind" viewBox="0 0 100 100">
+                <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
+                    d="M100,20v60L50,50z M50,20v60L0,50z"/>
+            </symbol>
+            <symbol id="fastForward" viewBox="0 0 100 100">
+                <path fill="#222" stroke="#222" stroke-width="8" stroke-linejoin="round"
+                    d="M0,20v60L50,50z M50,20v60L100,50z"/>
+            </symbol>
+        </svg>
+
         <ul class="buttons">
-            <li><button type="button" name="stop">⏹ Stop</button></li>
-            <li><button type="button" name="play">▶️ Play</button></li>
-            <li><button type="button" name="pause">⏸ Pause</button></li>
-            <!--
-            <li><button type="button" name="step">⏯ Step</button></li>
-            <li><button type="button" name="rewind">⏪ Rewind</button></li>
-            <li><button type="button" name="fastForward">⏩ Ffwd</button></li>
-            -->
-            <li><span>Current time</span></li>
+            <li>
+                <button type="button" name="stop">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="icon">
+                        <use href="#stop"/>
+                    </svg>
+                    Stop
+                </button>
+            </li>
+            <li>
+                <button type="button" name="play">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="icon">
+                        <use href="#play"/>
+                    </svg>
+                    Play
+                </button>
+            </li>
+            <li>
+                <button type="button" name="pause">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="icon">
+                        <use href="#pause"/>
+                    </svg>
+                    Pause
+                </button>
+            </li>
+            <li>
+                <button type="button" name="step">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="icon">
+                        <use href="#step"/>
+                    </svg>
+                    Step
+                </button>
+            </li>
+            <li>
+                <button type="button" name="rewind">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="icon">
+                        <use href="#rewind"/>
+                    </svg>
+                    Rewind
+                </button>
+            </li>
+            <li>
+                <button type="button" name="fastForward">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="icon">
+                        <use href="#fastForward"/>
+                    </svg>
+                    Ffwd
+                </button>
+            </li>
+            <li><span>Current time/rate</span></li>
         </ul>
     </body>
 </html>
