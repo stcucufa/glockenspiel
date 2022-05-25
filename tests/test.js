@@ -79,6 +79,10 @@ const TestCase = {
     },
 };
 
+const icon = id => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="icon">
+    <use xlink:href="icons.svg#${id}"/>
+</svg>`;
+
 function postMessage(target, type, data = {}) {
     target.postMessage(JSON.stringify(Object.assign(data, { type })), "*");
 }
@@ -116,14 +120,14 @@ function initFrame(tests) {
         },
 
         started(e, data) {
-            currentLi.innerHTML += ` 🌀 ${data.title ?? data.i}`;
+            currentLi.innerHTML += ` ${icon("running")} ${data.title ?? data.i}`;
         },
 
         success(e, data) {
-            if (/🌀/.test(currentLi.innerHTML)) {
-                currentLi.innerHTML = currentLi.innerHTML.replace(/🌀/, "✅");
+            if (/#running/.test(currentLi.innerHTML)) {
+                currentLi.innerHTML = currentLi.innerHTML.replace(/#running/, "#pass");
             } else {
-                currentLi.innerHTML += ` ✅ ${data.title ?? data.i}`;
+                currentLi.innerHTML += ` ${icon("pass")} ${data.title ?? data.i}`;
             }
             this.successes += 1;
             console.log(`+++ Success, #successes: ${this.successes}`);
@@ -131,10 +135,10 @@ function initFrame(tests) {
         },
 
         failure(e, data) {
-            if (/🌀/.test(currentLi.innerHTML)) {
-                currentLi.innerHTML = currentLi.innerHTML.replace(/🌀/, "❌");
+            if (/#running/.test(currentLi.innerHTML)) {
+                currentLi.innerHTML = currentLi.innerHTML.replace(/#running/, "#fail");
             } else {
-                currentLi.innerHTML += ` ❌ ${data.title ?? data.i}`;
+                currentLi.innerHTML += ` ${icon("fail")} ${data.title ?? data.i}`;
             }
             this.failures += 1;
             console.log(`--- Failure: ${data.error}, #failures: ${this.failures}`);
@@ -142,14 +146,14 @@ function initFrame(tests) {
         },
 
         timeout(e, data) {
-            currentLi.innerHTML = currentLi.innerHTML.replace(/🌀/, "💤");
+            currentLi.innerHTML = currentLi.innerHTML.replace(/#running/, "#timeout");
             this.timeouts += 1;
             console.log(`@@@ Timeout: ${data.error}, #timeouts: ${this.timeouts}`);
             postMessage(e.source, "run");
         },
 
         skipped(e, data) {
-            currentLi.innerHTML += ` 💬 ${data.title ?? data.i}`;
+            currentLi.innerHTML += ` ${icon("skip")} ${data.title ?? data.i}`;
             this.skips += 1;
             console.log(`... Skipped, #skips: ${this.skips}`);
             postMessage(e.source, "run");
