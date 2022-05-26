@@ -74,6 +74,33 @@ test("Repeating event", t => {
     t.equal(iterations, [3, 8, 13, 13, 8], "backward update");
 });
 
+test("Set time when running", t => {
+    const clock = manualClock();
+    const iterations = [];
+    clock.scheduler.at(updateTime => { iterations.push(updateTime); }, 3, 5);
+
+    clock.start();
+    clock.tick.advance(7);
+    t.equal(iterations, [3], "first update");
+    clock.setTime(12);
+    clock.tick.advance(7);
+    t.equal(iterations, [3, 8, 13, 18], "second update; advanced");
+});
+
+test("Set time when running (rate=0)", t => {
+    const clock = manualClock();
+    const iterations = [];
+    clock.scheduler.at(updateTime => { iterations.push(updateTime); }, 3, 5);
+
+    clock.start();
+    clock.tick.advance(7);
+    t.equal(iterations, [3], "first update");
+    clock.setRate(0);
+    clock.setTime(12);
+    clock.tick.advance(7);
+    t.equal(iterations, [3, 8], "second update; advanced");
+});
+
 test("Advance a running clock", t => {
     const clock = manualClock();
     const iterations = [];

@@ -105,6 +105,51 @@ test("setRate (running, multiple changes in a single update)", t => {
     t.equal(clock.now, 4, "clock ends up at 4");
 });
 
+test("Set time when running", t => {
+    const clock = manualClock();
+    clock.start();
+    clock.tick.advance(1);
+    t.equal(clock.now, 1, "time moving at normal rate");
+    clock.setTime(18);
+    t.equal(clock.now, 18, "time set before the clock tick");
+    clock.tick.advance(1);
+    t.equal(clock.now, 19, "time moving normally");
+});
+
+test("Set time when running (zero rate)", t => {
+    const clock = manualClock();
+    clock.rate = 0;
+    clock.start();
+    clock.tick.advance(1);
+    t.equal(clock.now, 0, "clock is not moving");
+    clock.setTime(17);
+    t.equal(clock.now, 17, "time set before the clock tick");
+    clock.tick.advance(1);
+    t.equal(clock.now, 17, "time not moving");
+});
+
+test("Set time with no effect (running, zero rate)", t => {
+    const clock = manualClock();
+    clock.rate = 0;
+    clock.start();
+    clock.tick.advance(1);
+    t.equal(clock.now, 0, "clock is not moving");
+    clock.setTime(0);
+    t.equal(pendingUpdate(clock), false, "no pending update");
+    clock.tick.advance(1);
+    t.equal(clock.now, 0, "clock is still not moving");
+});
+
+test("Set time when stopped", t => {
+    const clock = manualClock();
+    clock.tick.advance(1);
+    t.equal(clock.now, 0, "clock is not moving");
+    clock.setTime(17);
+    t.equal(clock.now, 17, "time set before the clock tick");
+    clock.tick.advance(1);
+    t.equal(clock.now, 17, "time not moving");
+});
+
 test("Advance a running clock", t => {
     const clock = manualClock();
     clock.start();

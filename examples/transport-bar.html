@@ -72,7 +72,7 @@ on(clock, "update", updateDisplay);
 on(transport, "advance", ({ amount }) => { clock.advance(amount * 1000); });
 on(transport, "pause", () => { clock.setRate(0); });
 on(transport, "reset", () => {
-    clock.skip(-clock.now);
+    clock.setTime(0);
     updateDisplay();
 });
 on(transport, "setRate", ({ rate }) => { clock.setRate(rate); })
