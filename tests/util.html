@@ -5,7 +5,7 @@
         <script type="module">
 
 import { test } from "./test.js";
-import { imagePromise, range } from "../lib/util.js";
+import { imagePromise, mod, range } from "../lib/util.js";
 
 test("imagePromise", async t => {
     const image = await imagePromise("../examples/tomato/img/tomato01.png");
@@ -16,6 +16,13 @@ test("imagePromise", async t => {
     } catch (e) {
         t.instanceof(e, Error, "missing image was caught");
     }
+});
+
+test("mod", t=> {
+    t.equal(mod(3, 7), 3, "3 mod 7 = 3");
+    t.equal(mod(13, 7), 6, "13 mod 7 = 6");
+    t.equal(mod(-3, 7), 4, "-3 mod 7 = 4");
+    t.equal(mod(-7, 7), 0, "-7 mod 7 = 0");
 });
 
 test("range", t => {

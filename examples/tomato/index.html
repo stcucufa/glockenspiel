@@ -12,7 +12,7 @@ body {
         </style>
         <script type="module">
 
-import { imagePromise, range } from "../../lib/util.js";
+import { imagePromise, mod, range } from "../../lib/util.js";
 import { Clock } from "../../lib/clock.js";
 
 play(Promise.all(
@@ -30,7 +30,7 @@ async function play(imagesPromise) {
     // TODO add transport bar
     clock.scheduler.at(t => {
         const frame = Math.round(t / period);
-        const image = images[frame % images.length];
+        const image = images[mod(frame, images.length)];
         canvas.width = image.naturalWidth;
         canvas.height = image.naturalHeight;
         context.drawImage(image, 0, 0);
