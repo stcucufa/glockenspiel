@@ -12,7 +12,7 @@ import { manualClock, pendingUpdate } from "./util.js";
 test("Callback parameters", t => {
     const clock = manualClock();
     let check = false;
-    clock.scheduler.at((updateTime, [from, to]) => {
+    clock.scheduler.at((updateTime, from, to) => {
         t.equal(updateTime, 7, "callback updateTime");
         t.equal(from, 0, "callback interval (from)");
         t.equal(to, 17, "callback interval (to)");
@@ -44,7 +44,7 @@ test("Going backward", t => {
     const clock = manualClock();
     const events = [false, false, false];
     for (let i = 0; i < events.length; ++i) {
-        clock.scheduler.at((updateTime, [from, to]) => {
+        clock.scheduler.at((updateTime, from, to) => {
             events[i] = updateTime * sign(to - from);
         }, i + 1)
     }
@@ -63,7 +63,7 @@ test("Going backward", t => {
 test("Repeating event", t => {
     const clock = manualClock();
     const iterations = [];
-    clock.scheduler.at(updateTime => { iterations.push(updateTime); }, 3, 5);
+    clock.scheduler.every(updateTime => { iterations.push(updateTime); }, 5, 3);
 
     clock.start();
     clock.tick.advance(7);
@@ -77,7 +77,7 @@ test("Repeating event", t => {
 test("Set time when running", t => {
     const clock = manualClock();
     const iterations = [];
-    clock.scheduler.at(updateTime => { iterations.push(updateTime); }, 3, 5);
+    clock.scheduler.every(updateTime => { iterations.push(updateTime); }, 5, 3);
 
     clock.start();
     clock.tick.advance(7);
@@ -90,7 +90,7 @@ test("Set time when running", t => {
 test("Set time when running (rate=0)", t => {
     const clock = manualClock();
     const iterations = [];
-    clock.scheduler.at(updateTime => { iterations.push(updateTime); }, 3, 5);
+    clock.scheduler.every(updateTime => { iterations.push(updateTime); }, 5, 3);
 
     clock.start();
     clock.tick.advance(7);
@@ -104,7 +104,7 @@ test("Set time when running (rate=0)", t => {
 test("Advance a running clock", t => {
     const clock = manualClock();
     const iterations = [];
-    clock.scheduler.at(updateTime => { iterations.push(updateTime); }, 3, 5);
+    clock.scheduler.every(updateTime => { iterations.push(updateTime); }, 5, 3);
 
     clock.start();
     clock.tick.advance(7);
@@ -117,7 +117,7 @@ test("Advance a running clock", t => {
 test("Advance a running clock (rate=0)", t => {
     const clock = manualClock();
     const iterations = [];
-    clock.scheduler.at(updateTime => { iterations.push(updateTime); }, 3, 5);
+    clock.scheduler.every(updateTime => { iterations.push(updateTime); }, 5, 3);
 
     clock.start();
     clock.tick.advance(7);
@@ -131,7 +131,7 @@ test("Advance a running clock (rate=0)", t => {
 test("Skip with a running clock", t => {
     const clock = manualClock();
     const iterations = [];
-    clock.scheduler.at(updateTime => { iterations.push(updateTime); }, 3, 5);
+    clock.scheduler.every(updateTime => { iterations.push(updateTime); }, 5, 3);
 
     clock.start();
     clock.tick.advance(7);
