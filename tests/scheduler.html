@@ -8,8 +8,12 @@ import { test } from "./test.js";
 import { Scheduler, Inclusive } from "../lib/scheduler.js";
 
 function update(scheduler, from, to, inclusive) {
-    for (const [f, t] of scheduler.schedule(from, to, inclusive)) {
-        f(t, from, to);
+    for (const [f, t, i] of scheduler.schedule(from, to, inclusive)) {
+        if (isNaN(i)) {
+            f(t, from, to);
+        } else {
+            f(i, t, from, to);
+        }
     }
 }
 
@@ -25,6 +29,55 @@ test("Add an single event with at(f, t)", t => {
     t.equal(happened, false, "Event does not happen when it is added");
     update(scheduler, 0, 20);
     t.equal(happened, true, "Event happens during the update");
+});
+
+test("Add repeating events with ratio(f, n)", t => {
+    const scheduler = Scheduler.create();
+    const frames = [];
+    // Animate at 9fps but refresh at 25fps (every 40ms)
+    scheduler.ratio(i => frames.push(i), 9);
+    update(scheduler, 0, 40, Inclusive);
+    t.equal(frames, [0], "First frame");
+    update(scheduler, 40, 80);
+    t.equal(frames, [0], "No new frame");
+    update(scheduler, 80, 120);
+    t.equal(frames, [0, 1], "New frame");
+    update(scheduler, 120, 160);
+    t.equal(frames, [0, 1], "Wait for next frame");
+    update(scheduler, 160, 200);
+    t.equal(frames, [0, 1], "Wait a bit more for next frame");
+    update(scheduler, 200, 240);
+    t.equal(frames, [0, 1, 2], "Got a new frame");
+    update(scheduler, 240, 999.999);
+    t.equal(frames, [0, 1, 2, 3, 4, 5, 6, 7, 8], "9 frames within 1s");
+    update(scheduler, 999.999, 1000);
+    t.equal(frames, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], "10th frame at exactly 1s");
+});
+
+test("Add repeating events with ratio(f, n, d)", t => {
+    const scheduler = Scheduler.create();
+    const beats = [];
+    // Play at 72 bpm
+    scheduler.ratio(i => beats.push(i), 72, 60000);
+    update(scheduler, 0, 1000, Inclusive);
+    t.equal(beats, [0, 1], "Two beats in first second");
+    update(scheduler, 1000, 2000);
+    t.equal(beats, [0, 1, 2], "One beat in first second");
+    update(scheduler, 2000, 2500);
+    t.equal(beats, [0, 1, 2, 3], "Fourth beat at exactly 2.5s");
+});
+
+test("Add repeating events with ratio(f, n, d, t)", t => {
+    const scheduler = Scheduler.create();
+    const beats = [];
+    // Play at 72 bpm
+    scheduler.ratio(i => beats.push(i), 72, 60000, 500);
+    update(scheduler, 0, 1000, Inclusive);
+    t.equal(beats, [0], "First beat in first second");
+    update(scheduler, 1000, 2000);
+    t.equal(beats, [0, 1], "Second beat in second second");
+    update(scheduler, 2000, 3000);
+    t.equal(beats, [0, 1, 2, 3], "Fourth beat at exactly 3s (with 500ms offset)");
 });
 
 test("Update: ]from, to]", t => {

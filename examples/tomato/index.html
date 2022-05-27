@@ -24,17 +24,13 @@ async function play(imagesPromise) {
     const context = canvas.getContext("2d");
     const clock = Clock.create();
     const fps = 9;
-    const period = 1000 / fps;
 
-    // TODO schedule at a given FPS (with frame number instead/in addition to time)
-    // TODO add transport bar
-    clock.scheduler.at(t => {
-        const frame = Math.round(t / period);
+    clock.scheduler.ratio(frame => {
         const image = images[mod(frame, images.length)];
         canvas.width = image.naturalWidth;
         canvas.height = image.naturalHeight;
         context.drawImage(image, 0, 0);
-    }, 0, period);
+    }, fps);
 
     const images = await imagesPromise;
     clock.start();

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>🌚 Phases of the moon</title>
+        <meta charset="utf-8">
+        <style>
+
+body {
+    margin: 0;
+    background-color: #222;
+    font-size: 12rem;
+}
+
+p {
+    text-align: center;
+}
+
+span {
+    display: none;
+}
+
+span.shown, span.moon, span.luna {
+    display: inline;
+}
+
+        </style>
+        <script type="module">
+
+import { on } from "../../lib/events.js";
+import { Clock } from "../../lib/clock.js";
+import { mod } from "../../lib/util.js";
+
+const clock = Clock.create();
+const moon = document.querySelectorAll("span.moon > span");
+const luna = document.querySelectorAll("span.luna > span");
+const fps = 7;
+const period = 1000 / fps;
+
+clock.scheduler.ratio((i, t) => {
+    document.querySelector("span.moon > span.shown")?.classList.toggle("shown", false);
+    moon[mod(i, moon.length)].classList.toggle("shown", true);
+}, fps);
+
+clock.scheduler.every(t => {
+    document.querySelector("span.luna > span.shown")?.classList.toggle("shown", false);
+    luna[Math.round(t / period) % luna.length].classList.toggle("shown", true);
+}, period);
+
+clock.start();
+
+        </script>
+    </head>
+    <body>
+        <p>
+            <span class="moon">
+                <span>🌕</span>
+                <span>🌖</span>
+                <span>🌗</span>
+                <span>🌘</span>
+                <span>🌑</span>
+                <span>🌒</span>
+                <span>🌓</span>
+                <span>🌔</span>
+            </span>
+            <span class="luna">
+                <span>🌕</span>
+                <span>🌖</span>
+                <span>🌗</span>
+                <span>🌘</span>
+                <span>🌑</span>
+                <span>🌒</span>
+                <span>🌓</span>
+                <span>🌔</span>
+            </span>
+        </p>
+    </body>
+</html>
