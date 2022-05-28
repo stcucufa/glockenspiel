@@ -1,38 +1,40 @@
 <svg xmlns="http://www.w3.org/2000/svg">
+    <defs>
 
-    <symbol id="fail" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" fill="#ff4040" r="50"/>
-        <g stroke="#f8f9f0" stroke-width="12" stroke-linecap="round">
-            <line x1="30" y1="30" x2="70" y2="70"/>
-            <line x1="70" y1="30" x2="30" y2="70"/>
-        </g>
-    </symbol>
+        <symbol id="fail" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" fill="#ff4040" r="50"/>
+            <g stroke="#f8f9f0" stroke-width="12" stroke-linecap="round">
+                <line x1="30" y1="30" x2="70" y2="70"/>
+                <line x1="70" y1="30" x2="30" y2="70"/>
+            </g>
+        </symbol>
 
-    <symbol id="pass" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" fill="#40b040" r="50"/>
-        <path fill="none" stroke="#f8f9f0" stroke-width="12" stroke-linecap="round"
-            stroke-linejoin="round" d="M30,50L42,70L70,30"/>
-    </symbol>
+        <symbol id="pass" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" fill="#40b040" r="50"/>
+            <path fill="none" stroke="#f8f9f0" stroke-width="12" stroke-linecap="round"
+                stroke-linejoin="round" d="M30,50L42,70L70,30"/>
+        </symbol>
 
-    <symbol id="running" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" fill="#80b0ff" r="50"/>
-        <g fill="#f8f9f0">
-            <circle cx="25" cy="50" r="8"/>
-            <circle cx="50" cy="50" r="8"/>
-            <circle cx="75" cy="50" r="8"/>
-        </g>
-    </symbol>
+        <symbol id="running" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" fill="#80b0ff" r="50"/>
+            <g fill="#f8f9f0">
+                <circle cx="25" cy="50" r="8"/>
+                <circle cx="50" cy="50" r="8"/>
+                <circle cx="75" cy="50" r="8"/>
+            </g>
+        </symbol>
 
-    <symbol id="timeout" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" fill="#ffc040" r="50"/>
-        <line stroke="#f8f9f0" stroke-width="12" stroke-linecap="round"
-            x1="50" y1="25" x2="50" y2="55"/>
-        <circle cx="50" cy="75" fill="#f8f9f0" r="6"/>
-    </symbol>
+        <symbol id="timeout" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" fill="#ffc040" r="50"/>
+            <line stroke="#f8f9f0" stroke-width="12" stroke-linecap="round"
+                x1="50" y1="25" x2="50" y2="55"/>
+            <circle cx="50" cy="75" fill="#f8f9f0" r="6"/>
+        </symbol>
 
-    <symbol id="skip" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" fill="#a0b0c0" r="50"/>
-        <circle cx="50" cy="50" fill="none" stroke="#f8f9f0" r="24" stroke-width="12"/>
-    </symbol>
+        <symbol id="skip" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" fill="#a0b0c0" r="50"/>
+            <circle cx="50" cy="50" fill="none" stroke="#f8f9f0" r="24" stroke-width="12"/>
+        </symbol>
 
+    </defs>
 </svg>

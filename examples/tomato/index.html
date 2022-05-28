@@ -5,14 +5,39 @@
         <style>
 
 body {
-    margin: 2em;
+    width: 480px;
+    margin: 2em auto;
     font-family: Univers, ui-sans-serif, sans-serif;
+    background-color: #222;
+}
+
+canvas {
+    border-radius: 8px;
+}
+
+button {
+    font-size: 1rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    background-color: #f8f9f0;
+    border: 0;
+}
+
+ul {
+    text-align: center;
+    padding: 0;
+    list-style-type: none;
+}
+
+ul li {
+    display: inline;
+    margin: 0 0.2rem;
 }
 
         </style>
         <script type="module">
 
-import { imagePromise, mod, range } from "../../lib/util.js";
+import { assoc, imagePromise, mod, range } from "../../lib/util.js";
 import { Clock } from "../../lib/clock.js";
 
 play(Promise.all(
@@ -20,28 +45,80 @@ play(Promise.all(
 ));
 
 async function play(imagesPromise) {
+
     const canvas = document.querySelector("canvas");
     const context = canvas.getContext("2d");
     const clock = Clock.create();
     const fps = 9;
 
-    clock.scheduler.ratio(frame => {
-        const image = images[mod(frame, images.length)];
+    let loop = "idle";
+    let nextLoop = [];
+    let loopOffset = 0;
+
+    const images = await imagesPromise;
+    const loops = {
+        idle: images.slice(0, 4),
+        blink: images.slice(5, 9),
+        speak: images.slice(9),
+    };
+
+    function draw(image) {
         canvas.width = image.naturalWidth;
         canvas.height = image.naturalHeight;
         context.drawImage(image, 0, 0);
+    }
+
+    draw(images[0]);
+
+    clock.scheduler.ratio(frame => {
+        const i = mod(frame - loopOffset, loops[loop].length);
+        if (nextLoop.length > 0 || loop !== "idle") {
+            if (i === 0) {
+                loop = nextLoop.shift() ?? "idle";
+                loopOffset = frame;
+            }
+        }
+        draw(loops[loop][i]);
     }, fps);
 
-    const images = await imagesPromise;
-    clock.start();
-    setTimeout(() => { clock.stop(); }, 7777);
+    const buttons = assoc(
+        document.querySelectorAll("button"),
+        button => {
+            button.addEventListener("click", () => { pushed(button.name, button); });
+            return [button.name, button];
+        }
+    );
+
+    function pushed(name, button) {
+        ({
+            stop: () => {
+                clock.stop();
+                button.disabled = true;
+                buttons.get("start").disabled = false;
+                loop = "idle";
+                nextLoop = [];
+            },
+            start: () => {
+                clock.start();
+                button.disabled = true;
+                buttons.get("stop").disabled = false;
+            },
+            blink: () => { nextLoop.push("blink"); },
+            speak: () => { nextLoop.push("speak"); },
+        })[name]();
+    }
+
 }
 
         </script>
     </head>
     <body>
         <canvas></canvas>
-        <p>Play a looping animation at 9 frames per second, and stop after
-        around 7.777s.</p>
+        <ul>
+            <li><button type="button" name="stop" disabled>Stop</button></li>
+            <li><button type="button" name="start">Start</button></li>
+            <li><button type="button" name="blink">Blink</button></li>
+            <li><button type="button" name="speak">Speak</button></li>
+        </ul>
     </body>
 </html>
