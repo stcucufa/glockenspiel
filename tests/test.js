@@ -97,6 +97,8 @@ function initFrame(tests) {
     }
 
     const iframe = document.body.appendChild(document.createElement("iframe"));
+    const status = document.querySelector("p.status");
+
     iframe.addEventListener("load", () => {
         if (!iframe.contentDocument.querySelector("script")) {
             console.log(`??? No tests for ${iframe.src}`);
@@ -116,6 +118,9 @@ function initFrame(tests) {
         ready(e, data) {
             console.log(">>> Running tests");
             currentLi.innerHTML = `<a href="${data.url.href}">${data.title}</a>`;
+            if (status) {
+                status.innerHTML = `${icon("running")} Running ${currentLi.innerHTML}`;
+            }
             postMessage(e.source, "run");
         },
 
@@ -161,6 +166,9 @@ function initFrame(tests) {
 
         done(e) {
             console.log(`<<< Done, #successes: ${this.successes}, #failures: ${this.failures}, #timeouts: ${this.timeouts}, #skips: ${this.skips}`);
+            if (status) {
+                status.innerHTML = `${icon(this.failures > 0 || this.timeouts > 0 ? "fail" : "pass")} Done, successes: ${this.successes}, failures: ${this.failures}, timeouts: ${this.timeouts}, skips: ${this.skips}`;
+            }
             nextTest();
         },
 
