@@ -36,10 +36,10 @@ const luna = document.querySelectorAll("span.luna > span");
 const fps = 7;
 const period = 1000 / fps;
 
-clock.scheduler.ratio((i, t) => {
+clock.scheduler.every((i, t) => {
     document.querySelector("span.moon > span.shown")?.classList.toggle("shown", false);
     moon[mod(i, moon.length)].classList.toggle("shown", true);
-}, fps);
+}, [fps, 1000]);
 
 clock.scheduler.every(t => {
     document.querySelector("span.luna > span.shown")?.classList.toggle("shown", false);
