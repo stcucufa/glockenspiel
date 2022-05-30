@@ -80,6 +80,9 @@ function draw() {
     const r = width / 2;
 
     context.save();
+    if (!clock.running) {
+        context.globalAlpha = 0.5;
+    }
     context.translate(r, r);
     context.lineJoin = "round";
     context.lineWidth = 8 / r;
@@ -91,5 +94,49 @@ function draw() {
 
 const clock = Clock.create();
 clock.start();
-clock.scheduler.at(() => { clock.stop(); }, 7777);
+
+const KnownKeys = new Set(["p", "ArrowLeft", "ArrowRight"]);
+
+let keys = {};
+window.addEventListener("keydown", event => {
+    if (KnownKeys.has(event.key)) {
+        keys[event.key] = [clock.now];
+    }
+});
+
+window.addEventListener("keyup", event => {
+    if (event.key === "p" && !clock.running) {
+        clock.start();
+        delete keys.p;
+    }
+    keys[event.key]?.push(clock.now);
+});
+
+clock.scheduler.every(t => {
+    if (keys.p && keys.p.length === 2) {
+        clock.stop();
+        keys = {};
+    }
+
+    if (keys.ArrowLeft) {
+        if (keys.ArrowLeft[0] < t) {
+            ship.heading -= 0.1;
+            keys.ArrowLeft[0] += 50;
+        }
+        if (keys.ArrowLeft.length === 2) {
+            delete keys.ArrowLeft;
+        }
+    }
+
+    if (keys.ArrowRight) {
+        if (keys.ArrowRight[0] < t) {
+            ship.heading += 0.1;
+            keys.ArrowRight[0] += 50;
+        }
+        if (keys.ArrowRight.length === 2) {
+            delete keys.ArrowRight;
+        }
+    }
+}, 10);
+
 on(clock, "update", draw);
