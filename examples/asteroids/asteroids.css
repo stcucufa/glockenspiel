@@ -1,0 +1,15 @@
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    width: min(100vh, 100vw);
+    margin: auto;
+    background: linear-gradient(#111d35, #49333b);
+}
+
+canvas {
+    width: min(100vh, 100vw);
+    height: min(100vh, 100vw);
+}
