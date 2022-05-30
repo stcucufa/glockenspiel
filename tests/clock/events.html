@@ -151,6 +151,25 @@ test("Update notification", t => {
     t.same(updateNotification.source, clock, "Update notification from clock");
 });
 
+test("Stop during update", t => {
+    const clock = manualClock();
+    let events = [];
+    const happen = t => { events.push(t); };
+    clock.scheduler.at(happen, 1);
+    clock.scheduler.at(happen, 7);
+    clock.scheduler.at(happen, 11);
+    clock.scheduler.at(happen, 17);
+    clock.scheduler.events.add({
+        f: () => { clock.stop(); },
+        t: 11,
+        priority: 1000
+    });
+    clock.start();
+    clock.tick.advance(19);
+    t.equal(events, [1, 7], "Updates");
+    t.equal(clock.now, 11, "Stop time before the end of the updates");
+});
+
         </script>
     </head>
     <body>

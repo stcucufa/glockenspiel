@@ -8,11 +8,11 @@ import { test } from "./test.js";
 import { Scheduler, Inclusive } from "../lib/scheduler.js";
 
 function update(scheduler, from, to, inclusive) {
-    for (const [f, t, i] of scheduler.schedule(from, to, inclusive)) {
+    for (const [e, t, i] of scheduler.schedule(from, to, inclusive)) {
         if (isNaN(i)) {
-            f(t, from, to);
+            e.f(t, from, to);
         } else {
-            f(i, t, from, to);
+            e.f(i, t, from, to);
         }
     }
 }
@@ -155,6 +155,37 @@ test("Update: repeat events, starting after zero", t => {
     t.equal(updateTimes, [3, 8, 13], "Second round of updates");
     update(scheduler, 14, 21);
     t.equal(updateTimes, [3, 8, 13, 18], "Third round of updates");
+});
+
+test("Event priority", t => {
+    const scheduler = Scheduler.create();
+    let occurrences = [];
+
+    scheduler.every(t => { occurrences.push(t); }, 1);
+    scheduler.events.add({
+        f: t => { occurrences.push("fizz"); },
+        period: 3,
+        t: 0,
+        priority: 2
+    });
+    scheduler.events.add({
+        f: t => { occurrences.push("buzz"); },
+        period: 5,
+        t: 0,
+        priority: 1
+    });
+
+    update(scheduler, 0, 15);
+    t.equal(occurrences, [
+        1, 2,
+        "fizz", 3, 4,
+        "buzz", 5,
+        "fizz", 6, 7, 8,
+        "fizz", 9,
+        "buzz", 10, 11,
+        "fizz", 12, 13, 14,
+        "fizz", "buzz", 15
+    ], "fizz every 3 numbers, and buzz every 5, with higher priority than numbers");
 });
 
         </script>

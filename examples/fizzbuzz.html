@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Fizzbuzz</title>
+        <meta charset="utf-8">
+        <style>
+
+body {
+    font-family: Univers, ui-sans-serif, sans-serif;
+    margin: 2em;
+}
+
+        </style>
+        <script type="module">
+
+import { on } from "../lib/events.js";
+import { Clock } from "../lib/clock.js";
+
+const N = 1111;
+
+const clock = Clock.create();
+const p = document.querySelector("p");
+const n = parseInt(new URLSearchParams(window.location.search).get("n"));
+
+clock.scheduler.events.add({
+    f: t => {
+        p.textContent += `...`;
+        clock.stop();
+    },
+    priority: 1000,
+    t: 1 + (isNaN(n) ? N : n)
+});
+
+clock.scheduler.every(() => {
+    p.textContent += ", ";
+}, 1);
+
+clock.scheduler.events.add({
+    f: t => {
+        if (!/z$/.test(p.textContent)) {
+            p.textContent += t.toString();
+        }
+    },
+    period: 1,
+    t: 0,
+    priority: 250,
+});
+
+clock.scheduler.events.add({
+    f: t => { p.textContent += "Fizz"; },
+    period: 3,
+    t: 0,
+    priority: 750
+});
+
+clock.scheduler.events.add({
+    f: t => {
+        if (!/z$/.test(p.textContent)) {
+            p.textContent += "Buzz";
+        } else {
+            p.textContent += "buzz";
+        }
+    },
+    period: 5,
+    t: 0,
+    priority: 500
+});
+
+clock.skip(1);
+clock.setRate(0.5);
+clock.start();
+
+        </script>
+    </head>
+    <body>
+        <h1>Fizzbuzz</h1>
+        <p></p>
+    </body>
+</html>
