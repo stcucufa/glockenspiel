@@ -3,6 +3,7 @@ import { Palette, hexToString } from "../../lib/color.js";
 import { RNG } from "../../lib/random.js";
 import { Clock } from "../../lib/clock.js";
 import { on } from "../../lib/events.js";
+import { Keys, key } from "../../lib/keys.js";
 
 const palette = Palette.Pico8.map(hexToString);
 const rng = RNG.create(parseInt(new URLSearchParams(window.location.search).get("seed")));
@@ -95,47 +96,23 @@ function draw() {
 const clock = Clock.create();
 clock.start();
 
-const KnownKeys = new Set(["p", "ArrowLeft", "ArrowRight"]);
-
-let keys = {};
-window.addEventListener("keydown", event => {
-    if (KnownKeys.has(event.key)) {
-        keys[event.key] = [clock.now];
+on(Keys, "keypress", ({ key }) => {
+    if (key === "p") {
+        if (clock.running) {
+            clock.stop();
+        } else {
+            clock.start();
+        }
     }
-});
-
-window.addEventListener("keyup", event => {
-    if (event.key === "p" && !clock.running) {
-        clock.start();
-        delete keys.p;
-    }
-    keys[event.key]?.push(clock.now);
 });
 
 clock.scheduler.every(t => {
-    if (keys.p && keys.p.length === 2) {
-        clock.stop();
-        keys = {};
+    if (key("ArrowLeft")) {
+        ship.heading -= 0.025;
     }
 
-    if (keys.ArrowLeft) {
-        if (keys.ArrowLeft[0] < t) {
-            ship.heading -= 0.1;
-            keys.ArrowLeft[0] += 50;
-        }
-        if (keys.ArrowLeft.length === 2) {
-            delete keys.ArrowLeft;
-        }
-    }
-
-    if (keys.ArrowRight) {
-        if (keys.ArrowRight[0] < t) {
-            ship.heading += 0.1;
-            keys.ArrowRight[0] += 50;
-        }
-        if (keys.ArrowRight.length === 2) {
-            delete keys.ArrowRight;
-        }
+    if (key("ArrowRight")) {
+        ship.heading += 0.025;
     }
 }, 10);
 
