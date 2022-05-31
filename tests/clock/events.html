@@ -170,6 +170,19 @@ test("Stop during update", t => {
     t.equal(clock.now, 11, "Stop time before the end of the updates");
 });
 
+test("Update after stop", t => {
+    const clock = manualClock();
+    const updates = [];
+    on(clock, "update", () => updates.push(clock.now));
+    clock.start();
+    clock.tick.advance(1);
+    clock.tick.skip(1);
+    clock.stop();
+    clock.tick.advance(0);
+    t.equal(updates, [1, 2], "Two updates (first when running, then after stop)");
+});
+
+
         </script>
     </head>
     <body>
