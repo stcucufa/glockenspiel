@@ -36,6 +36,47 @@ const Stars = {
     }
 };
 
+const Asteroid = {
+    create: create({
+        x: 0,
+        y: 0,
+        color: 4,
+        rng
+    }),
+
+    init() {
+        this.shape = range(1, this.sectors).map(i => {
+            const a = i * 2 * Math.PI / this.sectors;
+            const d = this.rng.randomNumber(0.75, 1.25);
+            return [Math.cos(a) * d, Math.sin(a) * d]
+        });
+    },
+
+    large() {
+        return this.create({ r: 0.1, sectors: 19 });
+    },
+
+    medium() {
+        return this.create({ r: 0.075, sectors: 12 });
+    },
+
+    small() {
+        return this.create({ r: 0.05, sectors: 7 });
+    },
+
+    draw(context) {
+        context.save();
+        context.strokeStyle = palette[this.color];
+        context.moveTo(this.shape[0][0] * this.r, this.shape[0][1] * this.r);
+        for (let i = 1; i < this.shape.length; ++i) {
+            context.lineTo(this.shape[i][0] * this.r, this.shape[i][1] * this.r);
+        }
+        context.closePath();
+        context.stroke();
+        context.restore();
+    }
+};
+
 const Ship = {
     create: create({
         shape: [[-0.75, -0.625], [-0.5, 0], [-0.75, 0.625], [0.75, 0]],
@@ -68,6 +109,7 @@ const Ship = {
 const canvas = document.querySelector("canvas");
 const stars = Stars.create();
 const ship = Ship.create();
+const asteroid = Asteroid.large();
 
 function draw() {
     const width = canvas.clientWidth * devicePixelRatio;
@@ -89,7 +131,8 @@ function draw() {
     context.lineWidth = 8 / r;
     context.scale(r, r);
     stars.draw(context);
-    ship.draw(context)
+    // ship.draw(context);
+    asteroid.draw(context);
     context.restore();
 }
 
