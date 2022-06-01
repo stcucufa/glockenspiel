@@ -1,4 +1,4 @@
-import { create, range } from "../../lib/util.js";
+import { create, mod, range } from "../../lib/util.js";
 import { Palette, hexToString } from "../../lib/color.js";
 import { RNG } from "../../lib/random.js";
 import { Clock } from "../../lib/clock.js";
@@ -8,19 +8,20 @@ import { Keys, key } from "../../lib/keys.js";
 const palette = Palette.Pico8.map(hexToString);
 const rng = RNG.create(parseInt(new URLSearchParams(window.location.search).get("seed")));
 
+const wrap = x => mod(x + 1, 2) - 1;
+
 const Stars = {
     create: create({
         count: 700,
-        palette: range(3, 7).map(i => palette[i]),
-        rng
+        palette: range(3, 7).map(i => palette[i])
     }),
 
     init() {
         this.dots = range(1, this.count).map(() => ({
-            x: this.rng.randomNumber(-1, 1),
-            y: this.rng.randomNumber(-1, 1),
-            r: this.rng.randomNumber(0.002, 0.0075),
-            color: this.rng.randomInt(this.palette.length)
+            x: rng.randomNumber(-1, 1),
+            y: rng.randomNumber(-1, 1),
+            r: rng.randomNumber(0.002, 0.0075),
+            color: rng.randomInt(this.palette.length)
         }));
     },
 
@@ -38,18 +39,22 @@ const Stars = {
 
 const Asteroid = {
     create: create({
-        x: 0,
-        y: 0,
-        color: 4,
-        rng
+        color: palette[4],
     }),
 
     init() {
         this.shape = range(1, this.sectors).map(i => {
             const a = i * 2 * Math.PI / this.sectors;
-            const d = this.rng.randomNumber(0.75, 1.25);
+            const d = rng.randomNumber(0.75, 1.25);
             return [Math.cos(a) * d, Math.sin(a) * d]
         });
+        this.th = rng.randomNumber(0, 2 * Math.PI);
+        this.heading = rng.randomNumber(0, 2 * Math.PI);
+        this.vth = rng.randomNumber(0.005, 0.015);
+        this.v = rng.randomNumber(0.001, 0.005);
+        const d = rng.randomNumber(0.5, 1);
+        this.x = wrap(d * Math.cos(this.heading));
+        this.y = wrap(d * Math.sin(this.heading));
     },
 
     large() {
@@ -64,52 +69,63 @@ const Asteroid = {
         return this.create({ r: 0.05, sectors: 7 });
     },
 
-    draw(context) {
-        context.save();
-        context.strokeStyle = palette[this.color];
-        context.moveTo(this.shape[0][0] * this.r, this.shape[0][1] * this.r);
-        for (let i = 1; i < this.shape.length; ++i) {
-            context.lineTo(this.shape[i][0] * this.r, this.shape[i][1] * this.r);
-        }
-        context.closePath();
-        context.stroke();
-        context.restore();
+    update() {
+        this.th += this.vth;
+        move.call(this);
     }
 };
 
 const Ship = {
     create: create({
         shape: [[-0.75, -0.625], [-0.5, 0], [-0.75, 0.625], [0.75, 0]],
-        palette: range(11, 8, -1).map(i => palette[i])
+        x: 0,
+        y: 0,
+        r: 0.05,
+        th: 0
     }),
 
     init() {
-        this.color = 0;
-        this.x = 0;
-        this.y = 0;
-        this.r = 0.05;
-        this.heading = 0;
+        this.palette =  range(11, 8, -1).map(i => palette[i])
+        this.color = this.palette[0];
     },
 
-    draw(context) {
-        context.save();
-        context.beginPath();
-        context.strokeStyle = this.palette[this.color];
-        context.rotate(this.heading);
-        context.moveTo(this.shape[0][0] * this.r, this.shape[0][1] * this.r);
-        for (let i = 1; i < this.shape.length; ++i) {
-            context.lineTo(this.shape[i][0] * this.r, this.shape[i][1] * this.r);
+    update() {
+        if (key("ArrowLeft")) {
+            this.th -= 0.025;
         }
-        context.closePath();
-        context.stroke();
-        context.restore();
+        if (key("ArrowRight")) {
+            this.th += 0.025;
+        }
+        this.heading = this.th;
+        this.v = key("ArrowUp") ? 0.01 : 0;
+        move.call(this);
     }
 };
 
 const canvas = document.querySelector("canvas");
 const stars = Stars.create();
 const ship = Ship.create();
-const asteroid = Asteroid.large();
+const asteroids = range(1, 4).map(() => Asteroid.large());
+
+function move() {
+    this.x = wrap(this.x + this.v * Math.cos(this.heading));
+    this.y = wrap(this.y + this.v * Math.sin(this.heading));
+}
+
+function drawShapeInContext(context) {
+    context.save();
+    context.beginPath();
+    context.strokeStyle = this.color;
+    context.translate(this.x, this.y);
+    context.rotate(this.th);
+    context.moveTo(this.shape[0][0] * this.r, this.shape[0][1] * this.r);
+    for (let i = 1; i < this.shape.length; ++i) {
+        context.lineTo(this.shape[i][0] * this.r, this.shape[i][1] * this.r);
+    }
+    context.closePath();
+    context.stroke();
+    context.restore();
+}
 
 function draw() {
     const width = canvas.clientWidth * devicePixelRatio;
@@ -131,8 +147,10 @@ function draw() {
     context.lineWidth = 8 / r;
     context.scale(r, r);
     stars.draw(context);
-    // ship.draw(context);
-    asteroid.draw(context);
+    drawShapeInContext.call(ship, context);
+    for (const asteroid of asteroids) {
+        drawShapeInContext.call(asteroid, context);
+    }
     context.restore();
 }
 
@@ -150,13 +168,10 @@ on(Keys, "keypress", ({ key }) => {
 });
 
 clock.scheduler.every(t => {
-    if (key("ArrowLeft")) {
-        ship.heading -= 0.025;
+    for (const asteroid of asteroids) {
+        asteroid.update(t);
     }
-
-    if (key("ArrowRight")) {
-        ship.heading += 0.025;
-    }
+    ship.update(t);
 }, 10);
 
 on(clock, "update", draw);
