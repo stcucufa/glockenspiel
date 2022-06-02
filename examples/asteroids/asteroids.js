@@ -1,4 +1,4 @@
-import { create, mod, range } from "../../lib/util.js";
+import { clamp, create, mod, range } from "../../lib/util.js";
 import { Palette, hexToString } from "../../lib/color.js";
 import { RNG } from "../../lib/random.js";
 import { Clock } from "../../lib/clock.js";
@@ -81,6 +81,8 @@ const Ship = {
         x: 0,
         y: 0,
         r: 0.05,
+        a: 0,
+        v: 0,
         th: 0
     }),
 
@@ -97,7 +99,8 @@ const Ship = {
             this.th += 0.025;
         }
         this.heading = this.th;
-        this.v = key("ArrowUp") ? 0.01 : 0;
+        this.a = key("ArrowUp") ? 0.001 : 0;
+        this.v = clamp(this.v + this.a - 0.00015, 0, 0.015);
         move.call(this);
     }
 };
@@ -164,6 +167,7 @@ on(Keys, "keypress", ({ key }) => {
         } else {
             clock.start();
         }
+        delete Keys.p;
     }
 });
 
