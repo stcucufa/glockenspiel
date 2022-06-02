@@ -5,7 +5,13 @@
         <script type="module">
 
 import { test } from "./test.js";
-import { imagePromise, mod, range } from "../lib/util.js";
+import { clamp, imagePromise, mod, range } from "../lib/util.js";
+
+test("clamp", t => {
+    t.equal(clamp(0, 1, 10), 1, "min");
+    t.equal(clamp(5, 1, 10), 5, "middle");
+    t.equal(clamp(15, 1, 10), 10, "max");
+});
 
 test("imagePromise", async t => {
     const image = await imagePromise("../examples/tomato/img/tomato01.png");
