@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Keys</title>
+        <script type="module">
+
+import { test, skip } from "./test.js";
+import { Keys, key } from "../lib/keys.js";
+import { on } from "../lib/events.js";
+
+test("Get key down", t => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "k" }));
+    const k = key("k");
+    t.equal(k.down, true, "k is down");
+    t.equal(k.repeat, false, "k is not repeated");
+    t.undefined(k.up, "k is not up");
+});
+
+test("Get key repeat", t => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "k" }));
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", repeat: true }));
+    const k = key("k");
+    t.equal(k.down, true, "k is down");
+    t.equal(k.repeat, true, "k is repeated");
+    t.undefined(k.up, "k is not up");
+});
+
+test("Get key up", t => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "k" }));
+    window.dispatchEvent(new KeyboardEvent("keyup", { key: "k" }));
+    const k = key("k");
+    t.equal(k.down, true, "k is down");
+    t.equal(k.repeat, false, "k is not repeated");
+    t.equal(k.up, true, "k is up");
+});
+
+test("Get key up: state is cleared after query", t => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "k" }));
+    const kDown = key("k");
+    t.equal(kDown.down, true, "k is down");
+    t.equal(kDown.repeat, false, "k is not repeated");
+    t.undefined(kDown.up, "k is not up");
+    t.same(kDown, Keys.k, "state for k is set");
+    window.dispatchEvent(new KeyboardEvent("keyup", { key: "k" }));
+    const kUp = key("k");
+    t.equal(kUp.down, true, "k is down");
+    t.equal(kUp.repeat, false, "k is not repeated");
+    t.equal(kUp.up, true, "k is up");
+    t.undefined(Keys.k, "state for k is cleared");
+});
+
+test("Key press notification", t => {
+    let keyPress = null;
+    on(Keys, "keypress", e => { keyPress = e; });
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "k" }));
+    window.dispatchEvent(new KeyboardEvent("keyup", { key: "k" }));
+    t.equal(keyPress?.key, "k", "Got correct key press");
+});
+
+        </script>
+    </head>
+    <body>
+    </body>
+</html>
