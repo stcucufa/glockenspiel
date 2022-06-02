@@ -141,6 +141,25 @@ test("Skip with a running clock", t => {
     t.equal(iterations, [3, 13, 18], "second update; advanced");
 });
 
+test("Start notification", t => {
+    const clock = manualClock();
+    let updateNotification = null;
+    on(clock, "start", e => { updateNotification = e; });
+
+    clock.start();
+    t.same(updateNotification.source, clock, "Start notification from clock");
+});
+
+test("Stop notification", t => {
+    const clock = manualClock();
+    let updateNotification = null;
+    on(clock, "stop", e => { updateNotification = e; });
+
+    clock.start();
+    clock.stop();
+    t.same(updateNotification.source, clock, "Stop notification from clock");
+});
+
 test("Update notification", t => {
     const clock = manualClock();
     let updateNotification = null;
@@ -181,7 +200,6 @@ test("Update after stop", t => {
     clock.tick.advance(0);
     t.equal(updates, [1, 2], "Two updates (first when running, then after stop)");
 });
-
 
         </script>
     </head>
