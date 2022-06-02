@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Self testin’</title>
+        <script type="module">
+
+import { on } from "../lib/events.js";
+import { nop } from "../lib/util.js";
+import { test, skip } from "./test.js";
+
+const expectations = {
+    successes: 0,
+    failures: 0
+};
+
+function pass(title, f) {
+    test(`[pass] ${title}`, f);
+    expectations.successes += 1;
+}
+
+function fail(title, f) {
+    test(`[fail] ${title}`, f);
+    expectations.failures += 1;
+}
+
+pass("t.throws", t => {
+    t.throws(() => {
+        throw new Error("This is expected");
+    }, "Did throw");
+});
+
+fail("t.throws", t => { t.throws(nop, "Did not throw"); });
+
+pass("t.undefined()", t => { t.undefined(nop(), "nop() returns nothing"); });
+fail("t.undefined()", t => { t.undefined("something", "String is not undefined"); });
+
+on(window, "tests:done", ({ handler }) => {
+    if (["successes", "failures"].every(p => expectations[p] === handler[p])) {
+        console.info("All expectations match");
+    } else {
+        console.error("Failed to match expectations", expectations, handler);
+    }
+});
+
+        </script>
+    </head>
+    <body>
+    </body>
+</html>

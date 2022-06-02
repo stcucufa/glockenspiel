@@ -1,4 +1,5 @@
 import { create, nop } from "../lib/util.js";
+import { notify } from "../lib/events.js";
 import { show } from "../lib/show.js";
 
 const DefaultTimeoutMs = 300;
@@ -59,11 +60,26 @@ const TestCase = {
         );
     },
 
+    ok(value, context) {
+        this.expect(
+            !!value,
+            [() => `expected ${show(value)} to be ok (!!)`, context]
+        );
+    },
+
     same(value, expected, context) {
         this.expect(
             value === expected,
             [() => `expected ${show(value)} to be the same (===) as ${show(expected)}`, context]
         );
+    },
+
+    throws(f, context) {
+        try {
+            f();
+            this.failures.push((context ? `${context}: ` : "") + "expected an exception to be thrown");
+        } catch (_) {
+        }
     },
 
     typeof(value, expected, context) {
@@ -73,12 +89,12 @@ const TestCase = {
         );
     },
 
-    ok(value, context) {
+    undefined(value, context) {
         this.expect(
-            !!value,
-            [() => `expected ${show(value)} to be ok (!!)`, context]
+            value === void 0,
+            [() => `expected ${show(value)} to be undefined`, context]
         );
-    },
+    }
 };
 
 const icon = (function() {
@@ -298,6 +314,7 @@ function initTest() {
 
         done(e) {
             console.log(`<<< Done, #successes: ${this.successes}, #failures: ${this.failures}, #timeouts: ${this.timeouts}, #skips: ${this.skips}`);
+            notify(window, "tests:done", { handler: this });
         },
 
         successes: 0,
