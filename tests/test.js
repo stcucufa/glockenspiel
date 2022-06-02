@@ -1,6 +1,8 @@
 import { create, nop } from "../lib/util.js";
 import { show } from "../lib/show.js";
 
+const DefaultTimeoutMs = 300;
+
 // Lazy-evaluated message with optional context
 const message = (msg, context) => () => (context ? `${context}: ` : "") + msg();
 
@@ -13,7 +15,7 @@ const equal = (x, y) => typeof x !== typeof y ? false :
 const equal_array = (x, y) => x.length === y.length && x.every((xi, i) => equal(xi, y[i]));
 
 const TestCase = {
-    create: create({ timeoutMs: 300 }),
+    create: create({ timeoutMs: DefaultTimeoutMs }),
 
     init() {
         this.failures = [];
@@ -79,16 +81,27 @@ const TestCase = {
     },
 };
 
-const icon = id => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="icon">
-    <use xlink:href="icons.svg#${id}"/>
+const icon = (function() {
+    const script = Array.prototype.find.call(
+        document.querySelectorAll("script"),
+        script => /\/test\.js\b/.test(script.src)
+    );
+    const prefix = script?.src.replace(/\/test\.js\b.*/, "/");
+    return id => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="icon">
+    <use xlink:href="${prefix}icons.svg#${id}"/>
 </svg>`;
+})();
 
 function postMessage(target, type, data = {}) {
     target.postMessage(JSON.stringify(Object.assign(data, { type })), "*");
 }
 
 function initFrame(tests) {
+    const iframe = document.createElement("iframe");
+    const status = document.querySelector("p.status");
+
     function nextTest() {
+        iframe.remove();
         if (tests.length > 0) {
             run(tests.shift());
         } else {
@@ -96,20 +109,22 @@ function initFrame(tests) {
         }
     }
 
-    const iframe = document.body.appendChild(document.createElement("iframe"));
-    const status = document.querySelector("p.status");
+    let currentLi;
+    let startTimeout;
+    let missing = 0;
 
-    iframe.addEventListener("load", () => {
-        if (!iframe.contentDocument.querySelector("script")) {
+    function run(li) {
+        currentLi = li;
+        if (status) {
+            status.innerHTML = `${icon("running")} Running ${currentLi.innerHTML}`;
+        }
+        startTimeout = setTimeout(() => {
             console.log(`??? No tests for ${iframe.src}`);
             currentLi.innerHTML = `<span class="notests">${currentLi.textContent}</span>`;
             nextTest();
-        }
-    });
-
-    let currentLi;
-    function run(li) {
-        currentLi = li;
+            missing += 1;
+        }, DefaultTimeoutMs);
+        document.body.appendChild(iframe);
         iframe.src = li.textContent;
     }
     nextTest();
@@ -117,10 +132,8 @@ function initFrame(tests) {
     return {
         ready(e, data) {
             console.log(">>> Running tests");
+            clearTimeout(startTimeout);
             currentLi.innerHTML = `<a href="${data.url.href}">${data.title}</a>`;
-            if (status) {
-                status.innerHTML = `${icon("running")} Running ${currentLi.innerHTML}`;
-            }
             postMessage(e.source, "run");
         },
 
@@ -165,9 +178,17 @@ function initFrame(tests) {
         },
 
         done(e) {
-            console.log(`<<< Done, #successes: ${this.successes}, #failures: ${this.failures}, #timeouts: ${this.timeouts}, #skips: ${this.skips}`);
+            console.log(`<<< Done, #successes: ${this.successes}, #failures: ${this.failures}, #timeouts: ${this.timeouts}, #skips: ${this.skips}, #missing: ${missing}`);
             if (status) {
-                status.innerHTML = `${icon(this.failures > 0 || this.timeouts > 0 ? "fail" : "pass")} Done, successes: ${this.successes}, failures: ${this.failures}, timeouts: ${this.timeouts}, skips: ${this.skips}`;
+                const reports = [
+                    ["successes", this.successes],
+                    ["failures", this.failures],
+                    ["timeouts", this.timeouts],
+                    ["skips", this.skips],
+                    ["missing", missing]
+                ].filter(([_, n]) => n > 0).map(xs => xs.join(": "));
+                const failure = this.failures > 0 || this.timeouts > 0 || missing > 0;
+                status.innerHTML = `${icon(failure ? "fail" : "pass")} Done, ${reports.join(", ")}.`;
             }
             nextTest();
         },
