@@ -8,6 +8,11 @@ import { Keys, key } from "../../lib/keys.js";
 const palette = Palette.Pico8.map(hexToString);
 const rng = RNG.create(parseInt(new URLSearchParams(window.location.search).get("seed")));
 
+let Debug = false;
+const DebugColor = palette[23];
+const CollidedColor = palette[25];
+
+const distance = (x1, y1, x2, y2) => Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
 const wrap = x => mod(x + 1, 2) - 1;
 
 const Stars = {
@@ -89,9 +94,11 @@ const Ship = {
     init() {
         this.palette =  range(11, 8, -1).map(i => palette[i])
         this.color = this.palette[0];
+        this.collidedColor = palette[24];
     },
 
     update() {
+        this.collided = false;
         if (key("ArrowLeft")) {
             this.th -= 0.025;
         }
@@ -115,6 +122,11 @@ function move() {
     this.y = wrap(this.y + this.v * Math.sin(this.heading));
 }
 
+function collide(a, bs, grace = 1) {
+    const r = a.r * grace;
+    a.collided = bs.some(b => distance(a.x, a.y, b.x, b.y) < r + b.r);
+}
+
 function drawShapeInContext(context) {
     context.save();
     context.beginPath();
@@ -128,6 +140,16 @@ function drawShapeInContext(context) {
     context.closePath();
     context.stroke();
     context.restore();
+
+    if (Debug) {
+        context.save();
+        context.lineWidth /= 2;
+        context.strokeStyle = this.collided ? CollidedColor : DebugColor;
+        context.beginPath();
+        context.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
+        context.stroke();
+        context.restore();
+    }
 }
 
 function draw() {
@@ -169,6 +191,10 @@ on(Keys, "keypress", ({ key }) => {
         }
         delete Keys.p;
     }
+
+    if (key === "d") {
+        Debug = !Debug;
+    }
 });
 
 clock.scheduler.every(t => {
@@ -176,6 +202,7 @@ clock.scheduler.every(t => {
         asteroid.update(t);
     }
     ship.update(t);
+    collide(ship, asteroids, 0.5);
 }, 10);
 
 on(clock, "update", draw);
