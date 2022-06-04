@@ -1,4 +1,4 @@
-import { clamp, create, mod, range } from "../../lib/util.js";
+import { clamp, create, mod, range, remove } from "../../lib/util.js";
 import { Palette, hexToString } from "../../lib/color.js";
 import { RNG } from "../../lib/random.js";
 import { Clock } from "../../lib/clock.js";
@@ -80,6 +80,19 @@ const Asteroid = {
     }
 };
 
+const Bullet = {
+    create: create({
+        r: 0.005,
+        v: 0.02,
+        color: palette[7]
+    }),
+
+    update() {
+        move.call(this);
+    }
+
+};
+
 const Ship = {
     create: create({
         shape: [[-0.75, -0.625], [-0.5, 0], [-0.75, 0.625], [0.75, 0]],
@@ -92,24 +105,39 @@ const Ship = {
     }),
 
     init() {
+        this.bullets = [];
         this.palette =  range(11, 8, -1).map(i => palette[i])
         this.color = this.palette[0];
         this.collidedColor = palette[24];
     },
 
-    update() {
-        this.collided = false;
+    update(t) {
         if (key("ArrowLeft")) {
             this.th -= 0.025;
         }
         if (key("ArrowRight")) {
             this.th += 0.025;
         }
-        this.heading = this.th;
         this.a = key("ArrowUp") ? 0.001 : 0;
+
+        this.heading = this.th;
         this.v = clamp(this.v + this.a - 0.00015, 0, 0.015);
+
+        this.collided = false;
         move.call(this);
-    }
+
+        if (key("z") && !this.justFired) {
+            const bullet = Bullet.create({
+                heading: this.heading,
+                x: this.x + this.r * Math.cos(this.heading),
+                y: this.y + this.r * Math.sin(this.heading)
+            });
+            this.bullets.push(bullet);
+            this.justFired = true;
+            clock.scheduler.at(t => { delete this.justFired; }, t + 150);
+            clock.scheduler.at(() => { const b = remove(bullet, this.bullets); }, t + 1000);
+        }
+    },
 };
 
 const canvas = document.querySelector("canvas");
@@ -130,15 +158,21 @@ function collide(a, bs, grace = 1) {
 function drawShapeInContext(context) {
     context.save();
     context.beginPath();
-    context.strokeStyle = this.color;
     context.translate(this.x, this.y);
-    context.rotate(this.th);
-    context.moveTo(this.shape[0][0] * this.r, this.shape[0][1] * this.r);
-    for (let i = 1; i < this.shape.length; ++i) {
-        context.lineTo(this.shape[i][0] * this.r, this.shape[i][1] * this.r);
+    if (this.shape) {
+        context.strokeStyle = this.color;
+        context.rotate(this.th);
+        context.moveTo(this.shape[0][0] * this.r, this.shape[0][1] * this.r);
+        for (let i = 1; i < this.shape.length; ++i) {
+            context.lineTo(this.shape[i][0] * this.r, this.shape[i][1] * this.r);
+        }
+        context.closePath();
+        context.stroke();
+    } else {
+        context.fillStyle = this.color;
+        context.arc(0, 0, this.r, 0, 2 * Math.PI);
+        context.fill();
     }
-    context.closePath();
-    context.stroke();
     context.restore();
 
     if (Debug) {
@@ -173,6 +207,9 @@ function draw() {
     context.scale(r, r);
     stars.draw(context);
     drawShapeInContext.call(ship, context);
+    for (const bullet of ship.bullets) {
+        drawShapeInContext.call(bullet, context);
+    }
     for (const asteroid of asteroids) {
         drawShapeInContext.call(asteroid, context);
     }
@@ -194,6 +231,7 @@ on(Keys, "keypress", ({ key }) => {
 
     if (key === "d") {
         Debug = !Debug;
+        delete Keys.d;
     }
 });
 
@@ -202,6 +240,9 @@ clock.scheduler.every(t => {
         asteroid.update(t);
     }
     ship.update(t);
+    for (const bullet of ship.bullets) {
+        bullet.update(t);
+    }
     collide(ship, asteroids, 0.5);
 }, 10);
 
