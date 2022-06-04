@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Random: RNG</title>
+        <script type="module">
+
+import { test, skip } from "../test.js";
+import { DefaultRNG, RNG } from "../../lib/random.js";
+
+test("RNG is created with an optional seed", t => {
+    t.above(RNG.create().state, 0, "No seed");
+    t.equal(RNG.create(104729).state, 104729, "Seed is an integer, not 0");
+    t.equal(RNG.create(Math.PI).state, 3, "Seed is not an integer, truncated");
+    t.above(RNG.create(0).state, 0, "Seed is 0");
+    t.above(RNG.create("seed").state, 0, "Seed is not a number");
+});
+
+test("RNG can be (re)seeded", t => {
+    const rng = RNG.create(104729);
+    rng.seed(98801);
+    t.equal(rng.state, 98801, "New state after seed");
+    rng.seed(Math.PI);
+    t.equal(rng.state, 3, "New state after seed (truncated)");
+    t.throws(() => { rng.seed(0); }, "Cannot seed with 0");
+    t.throws(() => { rng.seed(); }, "Cannot seed with no argument");
+    t.throws(() => { rng.seed("seed"); }, "Cannot seed without a number");
+});
+
+test("coinToss(p?) returns true/false with a default probability of 0.5", t => {
+    const rng = RNG.create(104729);
+    t.equal(rng.coinToss(), true, "True (p=0.5)");
+    t.equal(rng.coinToss(2 / 3), true, "True (p=2/3)");
+});
+
+test("random() returns a random number", t => {
+    const rng = RNG.create(104729);
+    t.equal(rng.random(), 0.3416548688760155);
+});
+
+test("randomId(prefix?) returns a random string", t => {
+    const rng = RNG.create(104729);
+    t.equal(rng.randomId(), "id_cas8zfksphe", "default prefix is `id_`");
+    t.equal(rng.randomId("#"), "#nv61weexu3d", "default prefix is `id_`");
+});
+
+test("randomInt(min?, max?) returns an integer in the [min, max] interval", t => {
+    const rng = RNG.create(104729);
+    t.equal(rng.randomInt(), 1467396488, "No argument: a 32-bit random number");
+    t.equal(rng.randomInt(10), 7, "min is 0 by default");
+    t.equal(rng.randomInt(1, 6), 1, "min and max");
+});
+
+test("randomNumber(min?, max?) returns a number in the [min, max[ interval", t => {
+    const rng = RNG.create(104729);
+    t.equal(rng.randomNumber(), 0.3416548688760155, "No argument: same as random()");
+    t.equal(rng.randomNumber(10), 6.6293837401618685, "min is 0 by default");
+    t.equal(rng.randomNumber(1, 6), 1.0951955700514828, "min and max");
+});
+
+test("randomItem(xs) returns a random item from a collection", t => {
+    const rng = RNG.create(104729);
+    t.equal(rng.randomItem(["a", "b", "c", "d", "e", "f"]), "c");
+});
+
+test("shuffle(xs) returns a random permutation of a collection", t => {
+    const rng = RNG.create(104729);
+    t.equal(rng.shuffle([1, 2, 3, 4, 5, 6]), [6, 5, 2, 1, 4, 3]);
+});
+
+test("DefaultRNG() is just a wrapper around Math.random()", t => {
+    const rng = DefaultRNG.create();
+    const i = rng.randomInt();
+    t.atLeast(i, 0, "randomInt");
+    t.below(i, 0x100000000, "randomInt");
+});
+
+        </script>
+    </head>
+    <body>
+    </body>
+</html>

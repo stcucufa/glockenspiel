@@ -42,6 +42,20 @@ const TestCase = {
         );
     },
 
+    atMost(value, expected, context) {
+        this.expect(
+            value <= expected,
+            [() => `expected ${show(value)} to be at most (<=) ${show(expected)}`, context]
+        );
+    },
+
+    below(value, expected, context) {
+        this.expect(
+            value < expected,
+            [() => `expected ${show(value)} to be below (<) ${show(expected)}`, context]
+        );
+    },
+
     equal(value, expected, context) {
         this.expect(
             equal(value, expected),

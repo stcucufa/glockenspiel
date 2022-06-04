@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Random: Urn</title>
+        <script type="module">
+
+import { test, skip } from "../test.js";
+import { DefaultRNG, RNG, Urn } from "../../lib/random.js";
+
+test("Urn.create(xs, rng?, allowDuplicates?) creates an urn with items from xs", t => {
+    t.equal(Urn.create([1, 2, 3, 4]).allowDuplicates, false, "allowDuplicates defaults to false");
+    t.equal(Object.getPrototypeOf(Urn.create([1, 2, 3, 4]).rng), DefaultRNG, "rng defaults to DefaultRNG");
+});
+
+test("Urn.pick() picks an item and removes it from the urn; duplicates are not allowed", t => {
+    const urn = Urn.create(["a", "b", "c", "d", "e", "f"], RNG.create(104729));
+    t.equal(urn.pick(), "c", "first pick");
+    t.equal(urn.pick(), "e", "second pick");
+    t.equal(urn.pick(), "a", "third pick");
+    t.equal(urn.pick(), "d", "fourth pick");
+    t.equal(urn.pick(), "b", "fifth pick");
+    t.equal(urn.pick(), "f", "sixth pick");
+    t.equal(urn.pick(), "e", "Urn was refilled");
+});
+
+test("Urn.pick() picks an item and removes it from the urn; duplicates are allowed", t => {
+    const urn = Urn.create(["a", "b", "c", "d", "e", "f"], RNG.create(104729), true);
+    t.equal(urn.pick(), "c", "first pick");
+    t.equal(urn.pick(), "e", "second pick");
+    t.equal(urn.pick(), "a", "third pick");
+    t.equal(urn.pick(), "d", "fourth pick");
+    t.equal(urn.pick(), "b", "fifth pick");
+    t.equal(urn.pick(), "f", "sixth pick");
+    t.equal(urn.pick(), "f", "Urn was refilled, duplicates are allowed");
+});
+
+test("Urn.refill() refills the urn", t => {
+    const urn = Urn.create(["a", "b", "c", "d", "e", "f"], RNG.create(104729), true);
+    t.equal(urn.pick(), "c", "first pick");
+    t.equal(urn.pick(), "e", "second pick");
+    t.equal(urn.pick(), "a", "third pick");
+    urn.refill();
+    t.equal(urn.pick(), "d", "fourth pick (after refill)");
+    t.equal(urn.pick(), "a", "fifth pick (same as third)");
+});
+
+        </script>
+    </head>
+    <body>
+    </body>
+</html>
