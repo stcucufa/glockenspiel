@@ -9,11 +9,16 @@ const message = (msg, context) => () => (context ? `${context}: ` : "") + msg();
 
 // Deep equality test
 // TODO ensure that we can compare cyclic structures
+// TODO object comparisons are shallow, which is useful in some cases
 const equal = (x, y) => typeof x !== typeof y ? false :
     Array.isArray(x) ? equal_array(x, y) :
+    typeof x === "number" ? equal_number(x, y) :
         x === y;
 
 const equal_array = (x, y) => x.length === y.length && x.every((xi, i) => equal(xi, y[i]));
+
+// Compare numbers, allowing NaN === NaN
+const equal_number = (x, y) => typeof y === "number" && (x === y || isNaN(x) && isNaN(y));
 
 const TestCase = {
     create: create({ timeoutMs: DefaultTimeoutMs }),
