@@ -11,7 +11,7 @@ test("array", t => {
     t.equal(show([]), "[]", "empty array");
     t.equal(
         show([1, "foo", [2, "bar", { baz: null }]]),
-        "[1, \"foo\", [2, \"bar\", {baz: null}]]",
+        "[1, \"foo\", [2, \"bar\", { baz: null }]]",
         "nesting"
     );
     const infinity = [1, 2, 3];
@@ -25,7 +25,7 @@ test("map", t => {
     m.set("foo", "bar");
     m.set([1, 2], 3);
     m.set(Symbol("self"), m);
-    t.equal(show(m), "Map {\"foo\" => \"bar\", [1, 2] => 3, Symbol(self) => ...}", "empty map");
+    t.equal(show(m), "Map { \"foo\" => \"bar\", [1, 2] => 3, Symbol(self) => ... }", "empty map");
 })
 
 test("null", t => { t.equal(show(null), "null"); });
@@ -39,9 +39,9 @@ test("number", t => {
 test("object", t => {
     t.equal(show({}), "{}", "empty object");
     const object = { foo: 1, bar: Symbol("bar"), baz: { fum: ["x", null] } };
-    t.equal(show(object), "{foo: 1, bar: Symbol(bar), baz: {fum: [\"x\", null]}}", "nesting");
+    t.equal(show(object), "{ foo: 1, bar: Symbol(bar), baz: { fum: [\"x\", null] } }", "nesting");
     object.self = object;
-    t.equal(show(object), "{foo: 1, bar: Symbol(bar), baz: {fum: [\"x\", null]}, self: ...}", "cycle");
+    t.equal(show(object), "{ foo: 1, bar: Symbol(bar), baz: { fum: [\"x\", null] }, self: ... }", "cycle");
     
 });
 

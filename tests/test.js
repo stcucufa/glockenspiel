@@ -1,4 +1,4 @@
-import { create, nop } from "../lib/util.js";
+import { create, isEmpty, nop } from "../lib/util.js";
 import { notify } from "../lib/events.js";
 import { show } from "../lib/show.js";
 
@@ -58,6 +58,13 @@ const TestCase = {
         this.expect(
             value < expected,
             [() => `expected ${show(value)} to be below (<) ${show(expected)}`, context]
+        );
+    },
+
+    empty(value, context) {
+        this.expect(
+            isEmpty(value),
+            [() => `expected ${show(value)} to be empty`, context]
         );
     },
 
