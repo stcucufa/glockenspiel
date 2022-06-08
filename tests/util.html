@@ -5,12 +5,21 @@
         <script type="module">
 
 import { test } from "./test.js";
-import { clamp, imagePromise, isEmpty, mod, nop, range, remove } from "../lib/util.js";
+import { clamp, extend, imagePromise, isEmpty, mod, nop, range, remove } from "../lib/util.js";
 
 test("clamp(x, min, max)", t => {
     t.equal(clamp(0, 1, 10), 1, "min");
     t.equal(clamp(5, 1, 10), 5, "middle");
     t.equal(clamp(15, 1, 10), 10, "max");
+});
+
+test("extend(object, ...properties)", t => {
+    const Foo = { foo: 1, fum: 2 };
+    const Bar = extend(Foo, { bar: 3, fum: "quux" }, { baz: 4 });
+    t.equal(Bar.foo, 1, "foo");
+    t.equal(Bar.bar, 3, "bar");
+    t.equal(Bar.baz, 4, "baz");
+    t.equal(Bar.fum, "quux", "fum");
 });
 
 test("imagePromise(url)", async t => {

@@ -6,11 +6,12 @@
 
 import { sign } from "../../lib/util.js";
 import { on } from "../../lib/events.js";
+import { ManualClock } from "../../lib/clock.js";
 import { test, skip } from "../test.js";
-import { manualClock, pendingUpdate } from "./util.js";
+import { pendingUpdate } from "./util.js";
 
 test("Callback parameters", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     let check = false;
     clock.scheduler.at((updateTime, from, to) => {
         t.equal(updateTime, 7, "callback updateTime");
@@ -25,7 +26,7 @@ test("Callback parameters", t => {
 });
 
 test("Going forward through several events", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     const events = [false, false, false];
     for (let i = 0; i < events.length; ++i) {
         clock.scheduler.at(updateTime => { events[i] = updateTime; }, i)
@@ -41,7 +42,7 @@ test("Going forward through several events", t => {
 });
 
 test("Going backward", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     const events = [false, false, false];
     for (let i = 0; i < events.length; ++i) {
         clock.scheduler.at((updateTime, from, to) => {
@@ -61,7 +62,7 @@ test("Going backward", t => {
 });
 
 test("Repeating event", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     const iterations = [];
     clock.scheduler.every(updateTime => { iterations.push(updateTime); }, 5, 3);
 
@@ -75,7 +76,7 @@ test("Repeating event", t => {
 });
 
 test("Set time when running", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     const iterations = [];
     clock.scheduler.every(updateTime => { iterations.push(updateTime); }, 5, 3);
 
@@ -88,7 +89,7 @@ test("Set time when running", t => {
 });
 
 test("Set time when running (rate=0)", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     const iterations = [];
     clock.scheduler.every(updateTime => { iterations.push(updateTime); }, 5, 3);
 
@@ -102,7 +103,7 @@ test("Set time when running (rate=0)", t => {
 });
 
 test("Advance a running clock", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     const iterations = [];
     clock.scheduler.every(updateTime => { iterations.push(updateTime); }, 5, 3);
 
@@ -115,7 +116,7 @@ test("Advance a running clock", t => {
 });
 
 test("Advance a running clock (rate=0)", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     const iterations = [];
     clock.scheduler.every(updateTime => { iterations.push(updateTime); }, 5, 3);
 
@@ -129,7 +130,7 @@ test("Advance a running clock (rate=0)", t => {
 });
 
 test("Skip with a running clock", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     const iterations = [];
     clock.scheduler.every(updateTime => { iterations.push(updateTime); }, 5, 3);
 
@@ -142,7 +143,7 @@ test("Skip with a running clock", t => {
 });
 
 test("Start notification", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     let updateNotification = null;
     on(clock, "start", e => { updateNotification = e; });
 
@@ -151,7 +152,7 @@ test("Start notification", t => {
 });
 
 test("Stop notification", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     let updateNotification = null;
     on(clock, "stop", e => { updateNotification = e; });
 
@@ -161,7 +162,7 @@ test("Stop notification", t => {
 });
 
 test("Update notification", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     let updateNotification = null;
     on(clock, "update", e => { updateNotification = e; });
 
@@ -171,7 +172,7 @@ test("Update notification", t => {
 });
 
 test("Stop during update", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     let events = [];
     const happen = t => { events.push(t); };
     clock.scheduler.at(happen, 1);
@@ -190,7 +191,7 @@ test("Stop during update", t => {
 });
 
 test("Update after stop", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     const updates = [];
     on(clock, "update", () => updates.push(clock.now));
     clock.start();

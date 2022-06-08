@@ -5,7 +5,7 @@
         <script type="module">
 
 import { test, skip } from "./test.js";
-import { Clock } from "../lib/clock.js";
+import { Clock, ManualClock } from "../lib/clock.js";
 import { ManualTick } from "../lib/tick.js";
 
 test("Create a new clock", t => {
@@ -30,7 +30,26 @@ test("Create a new clock with extra properties", t => {
     t.typeof(clock.tick.advance, "function", "manual tick");
 });
 
+test("Create a manual clock", t => {
+    const clock = ManualClock.create();
+    t.equal(clock.rate, 1, "default rate");
+    t.equal(clock.running, false, "initial state");
+    t.equal(clock.now, 0, "initial time");
+    t.typeof(clock.tick.advance, "function", "manual tick");
+    t.ok(clock.scheduler, "default scheduler");
+});
 
+test("Create a manual clock with extra properties", t => {
+    const clock = ManualClock.create({
+        for: "testing",
+        rate: 2
+    });
+
+    t.equal(clock.for, "testing", "custom properties");
+    t.equal(clock.rate, 2, "initial rate is overridden");
+    t.equal(clock.running, false, "initial state is not overridden");
+    t.typeof(clock.tick.advance, "function", "manual tick");
+});
 
         </script>
     </head>

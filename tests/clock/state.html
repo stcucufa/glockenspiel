@@ -4,11 +4,12 @@
         <title>Clock state</title>
         <script type="module">
 
+import { ManualClock } from "../../lib/clock.js";
 import { test } from "../test.js";
-import { manualClock, pendingUpdate } from "./util.js";
+import { pendingUpdate } from "./util.js";
 
 test("Stopped clock", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     t.equal(clock.running, false, "clock is not running by default");
     t.equal(clock.now, 0, "clock starts at 0");
     clock.tick.advance(1);
@@ -17,7 +18,7 @@ test("Stopped clock", t => {
 });
 
 test("Start the clock", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     clock.start();
     t.equal(clock.running, true, "clock is running after start()");
     t.equal(clock.now, 0, "clock starts at 0");
@@ -27,7 +28,7 @@ test("Start the clock", t => {
 });
 
 test("Stop a running clock", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     clock.start();
     clock.stop();
     t.equal(clock.running, false, "clock is stopped after stop()");
@@ -37,7 +38,7 @@ test("Stop a running clock", t => {
 });
 
 test("Resume a stopped clock (before update)", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     clock.start();
     clock.stop();
     clock.tick.advance(1);
@@ -50,7 +51,7 @@ test("Resume a stopped clock (before update)", t => {
 });
 
 test("Resume a stopped clock (after update)", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     clock.start();
     clock.tick.advance(17);
     t.equal(clock.now, 17, "clock stopped at 17");
@@ -65,7 +66,7 @@ test("Resume a stopped clock (after update)", t => {
 });
 
 test("setRate (stopped)", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     clock.rate = 2;
     t.equal(clock.rate, 2, "rate was set to 2");
     t.equal(pendingUpdate(clock), false, "no pending update");
@@ -75,7 +76,7 @@ test("setRate (stopped)", t => {
 });
 
 test("setRate (running)", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     clock.start();
     clock.tick.advance(1);
     t.equal(clock.now, 1, "clock at 1");
@@ -93,7 +94,7 @@ test("setRate (running)", t => {
 });
 
 test("setRate (running, multiple changes in a single update)", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     clock.start();
     clock.tick.skip(1);
     clock.setRate(4);
@@ -106,7 +107,7 @@ test("setRate (running, multiple changes in a single update)", t => {
 });
 
 test("Set time when running", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     clock.start();
     clock.tick.advance(1);
     t.equal(clock.now, 1, "time moving at normal rate");
@@ -117,7 +118,7 @@ test("Set time when running", t => {
 });
 
 test("Set time when running (zero rate)", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     clock.rate = 0;
     clock.start();
     clock.tick.advance(1);
@@ -129,7 +130,7 @@ test("Set time when running (zero rate)", t => {
 });
 
 test("Set time with no effect (running, zero rate)", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     clock.rate = 0;
     clock.start();
     clock.tick.advance(1);
@@ -141,7 +142,7 @@ test("Set time with no effect (running, zero rate)", t => {
 });
 
 test("Set time when stopped", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     clock.tick.advance(1);
     t.equal(clock.now, 0, "clock is not moving");
     clock.setTime(17);
@@ -151,7 +152,7 @@ test("Set time when stopped", t => {
 });
 
 test("Advance a running clock", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     clock.start();
     clock.tick.advance(1);
     t.equal(clock.now, 1, "time moving at normal rate");
@@ -162,7 +163,7 @@ test("Advance a running clock", t => {
 });
 
 test("Advance a running clock (zero rate)", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     clock.rate = 0;
     clock.start();
     clock.tick.advance(1);
@@ -174,7 +175,7 @@ test("Advance a running clock (zero rate)", t => {
 });
 
 test("Advance a stopped clock (skip)", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     clock.tick.advance(1);
     t.equal(clock.now, 0, "clock is not moving");
     clock.advance(17);
@@ -184,7 +185,7 @@ test("Advance a stopped clock (skip)", t => {
 });
 
 test("Skip time when running", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     clock.start();
     clock.tick.advance(1);
     t.equal(clock.now, 1, "time moving at normal rate");
@@ -195,7 +196,7 @@ test("Skip time when running", t => {
 });
 
 test("Skip time when running (zero rate)", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     clock.rate = 0;
     clock.start();
     clock.tick.advance(1);
@@ -207,7 +208,7 @@ test("Skip time when running (zero rate)", t => {
 });
 
 test("Skip time when stopped", t => {
-    const clock = manualClock();
+    const clock = ManualClock.create();
     clock.tick.advance(1);
     t.equal(clock.now, 0, "clock is not moving");
     clock.skip(17);
