@@ -5,7 +5,7 @@
         <script type="module">
 
 import { sign } from "../../lib/util.js";
-import { on } from "../../lib/events.js";
+import { on, once } from "../../lib/events.js";
 import { ManualClock } from "../../lib/clock.js";
 import { test, skip } from "../test.js";
 import { pendingUpdate } from "./util.js";
@@ -144,31 +144,78 @@ test("Skip with a running clock", t => {
 
 test("Start notification", t => {
     const clock = ManualClock.create();
-    let updateNotification = null;
-    on(clock, "start", e => { updateNotification = e; });
+    let startNotification = null;
+    on(clock, "start", e => { startNotification = e; });
 
     clock.start();
-    t.same(updateNotification.source, clock, "Start notification from clock");
+    t.same(startNotification.source, clock, "Start notification from clock");
 });
 
 test("Stop notification", t => {
     const clock = ManualClock.create();
-    let updateNotification = null;
-    on(clock, "stop", e => { updateNotification = e; });
+    let stopNotification = null;
+    on(clock, "stop", e => { stopNotification = e; });
 
     clock.start();
     clock.stop();
-    t.same(updateNotification.source, clock, "Stop notification from clock");
+    t.same(stopNotification.source, clock, "Stop notification from clock");
 });
 
-test("Update notification", t => {
+test("Update notifications", t => {
     const clock = ManualClock.create();
-    let updateNotification = null;
-    on(clock, "update", e => { updateNotification = e; });
+    const updateNotifications = [];
+    on(clock, "before-update", e => { updateNotifications.push([e.source, e.type, e.from, e.to]); });
+    on(clock, "update", e => { updateNotifications.push([e.source, e.type]); });
 
     clock.start();
     clock.tick.advance(1);
-    t.same(updateNotification.source, clock, "Update notification from clock");
+    t.equal(updateNotifications, [[clock, "before-update", 0, 1], [clock, "update"]]);
+});
+
+test("Update notifications (stopped clock)", t => {
+    const clock = ManualClock.create();
+    const updateNotifications = [];
+    on(clock, "before-update", e => { updateNotifications.push([e.source, e.type, e.from, e.to]); });
+    on(clock, "update", e => { updateNotifications.push([e.source, e.type]); });
+
+    clock.start();
+    clock.stop();
+    clock.tick.advance(1);
+    t.equal(updateNotifications, [[clock, "before-update", 0, 0], [clock, "update"]]);
+});
+
+test("Update notifications (multiple before’s)", t => {
+    const clock = ManualClock.create();
+    const updateNotifications = [];
+    on(clock, "before-update", e => { updateNotifications.push([e.source, e.type, e.from, e.to]); });
+    on(clock, "update", e => { updateNotifications.push([e.source, e.type]); });
+
+    clock.start();
+    clock.tick.skip(19);
+    clock.setRate(-0.5);
+    clock.tick.advance(4);
+    t.equal(updateNotifications, [[clock, "before-update", 0, 19], [clock, "before-update", 19, 17], [clock, "update"]]);
+});
+
+test("Before update really happens before updates", t => {
+    const clock = ManualClock.create();
+    const occurrences = [];
+    once(clock, "before-update", e => {
+        clock.scheduler.at(t => { occurrences.push(["a", t]); });
+    });
+
+    clock.scheduler.every(t => { occurrences.push(["*", t]); }, 17);
+
+    clock.start();
+    clock.tick.advance(7);
+    t.equal(occurrences, [["a", 0], ["*", 0]], "First update");
+
+    once(clock, "before-update", e => {
+        clock.scheduler.at(t => { occurrences.push(["b", t]); });
+    });
+
+    clock.tick.advance(7);
+    t.equal(occurrences, [["a", 0], ["*", 0], ["b", 14]], "Second update");
 });
 
 test("Stop during update", t => {

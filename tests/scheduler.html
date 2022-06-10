@@ -6,7 +6,7 @@
 
 import { test } from "./test.js";
 import { nop } from "../lib/util.js";
-import { Scheduler, Inclusive } from "../lib/scheduler.js";
+import { Scheduler, ASAP, Inclusive } from "../lib/scheduler.js";
 
 function update(scheduler, from, to, inclusive) {
     for (const [e, t, i] of scheduler.schedule(from, to, inclusive)) {
@@ -23,13 +23,28 @@ test("Create a new scheduler", t => {
     t.ok(scheduler);
 });
 
-test("Add an single event with at(f, t)", t => {
+test("Add a single event with at(f, t)", t => {
     const scheduler = Scheduler.create();
     let happened = false;
     scheduler.at(() => { happened = true; }, 10);
     t.equal(happened, false, "Event does not happen when it is added");
-    update(scheduler, 0, 20);
+    update(scheduler, 0, 20, Inclusive);
     t.equal(happened, true, "Event happens during the update");
+});
+
+test("Add a single event with at(f, t), t = ASAP (default)", t => {
+    const scheduler = Scheduler.create();
+    const updates = [];
+    scheduler.at(t => { updates.push(["before 10", t]); }, ASAP);
+    scheduler.at(t => { updates.push(["at 10", t]); }, 10);
+    t.equal(updates, [], "No update yet");
+    update(scheduler, 0, 7, Inclusive);
+    t.equal(updates, [["before 10", 7]], "First update");
+    update(scheduler, 7, 14);
+    t.equal(updates, [["before 10", 7], ["at 10", 10]], "Second update");
+    scheduler.at(t => { updates.push(["after 10", t]); });
+    update(scheduler, 14, 21);
+    t.equal(updates, [["before 10", 7], ["at 10", 10], ["after 10", 21]], "Third update");
 });
 
 test("Don’t add events with indefinite time", t => {
@@ -78,6 +93,36 @@ test("Add repeating events with every(f, [n, d], t)", t => {
     t.equal(beats, [0, 1], "Second beat in second second");
     update(scheduler, 2000, 3000);
     t.equal(beats, [0, 1, 2, 3], "Fourth beat at exactly 3s (with 500ms offset)");
+});
+
+test("Add events repeating at every update with every(f, ASAP)", t => {
+    const scheduler = Scheduler.create();
+    const updates = [];
+    scheduler.every(t => { updates.push(["a", t]); }, ASAP);
+    scheduler.every(t => { updates.push(["b", t]); }, 17);
+    update(scheduler, 0, 11, Inclusive);
+    t.equal(updates, [["a", 0], ["b", 0]], "First update");
+    update(scheduler, 11, 22);
+    t.equal(updates, [["a", 0], ["b", 0], ["a", 17], ["b", 17]], "Second update");
+    update(scheduler, 22, 33);
+    t.equal(updates, [["a", 0], ["b", 0], ["a", 17], ["b", 17], ["a", 33]], "Third update");
+    update(scheduler, 33, 44);
+    t.equal(updates, [["a", 0], ["b", 0], ["a", 17], ["b", 17], ["a", 33], ["a", 34], ["b", 34]], "Fourth update");
+});
+
+test("Add events repeating at every update with every(f)", t => {
+    const scheduler = Scheduler.create();
+    const updates = [];
+    scheduler.every(t => { updates.push(["a", t]); });
+    scheduler.every(t => { updates.push(["b", t]); }, 17);
+    update(scheduler, 44, 33, Inclusive);
+    t.equal(updates, [["a", 34], ["b", 34]], "First update (backward)");
+    update(scheduler, 33, 22);
+    t.equal(updates, [["a", 34], ["b", 34], ["a", 22]], "Second update (backward)");
+    update(scheduler, 22, 11);
+    t.equal(updates, [["a", 34], ["b", 34], ["a", 22], ["a", 17], ["b", 17]], "Third update (backward)");
+    update(scheduler, 11, 0);
+    t.equal(updates, [["a", 34], ["b", 34], ["a", 22], ["a", 17], ["b", 17], ["a", 0], ["b", 0]], "Fourth update (backward)");
 });
 
 test("Update: ]from, to]", t => {
@@ -172,23 +217,23 @@ test("Update: repeat events, starting after zero", t => {
 
 test("Event priority", t => {
     const scheduler = Scheduler.create();
-    let occurrences = [];
+    const occurrences = [];
 
     scheduler.every(t => { occurrences.push(t); }, 1);
-    scheduler.events.add({
+    scheduler.addEvent({
         f: t => { occurrences.push("fizz"); },
         period: 3,
         t: 0,
         priority: 2
     });
-    scheduler.events.add({
+    scheduler.addEvent({
         f: t => { occurrences.push("buzz"); },
         period: 5,
         t: 0,
         priority: 1
     });
 
-    update(scheduler, 0, 15);
+    update(scheduler, 0, 15); // Not inclusive to start at 1 and not 0.
     t.equal(occurrences, [
         1, 2,
         "fizz", 3, 4,
@@ -199,6 +244,27 @@ test("Event priority", t => {
         "fizz", 12, 13, 14,
         "fizz", "buzz", 15
     ], "fizz every 3 numbers, and buzz every 5, with higher priority than numbers");
+});
+
+test("Event priority with ASAP", t => {
+    const scheduler = Scheduler.create();
+    const occurrences = [];
+
+    scheduler.addEvent({
+        f: t => { occurrences.push(["a", t]); },
+        period: 11,
+        t: 0,
+        priority: 1
+    });
+
+    scheduler.every(t => { occurrences.push(["b", t]); }, ASAP);
+
+    update(scheduler, 0, 7, Inclusive);
+    t.equal(occurrences, [["a", 0], ["b", 0]], "First update");
+    update(scheduler, 7, 14);
+    t.equal(occurrences, [["a", 0], ["b", 0], ["a", 11], ["b", 11]], "Second update");
+    update(scheduler, 14, 21);
+    t.equal(occurrences, [["a", 0], ["b", 0], ["a", 11], ["b", 11], ["b", 21]], "Last update");
 });
 
         </script>
