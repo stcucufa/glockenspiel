@@ -5,7 +5,7 @@
         <script type="module">
 
 import { test } from "./test.js";
-import { clamp, extend, imagePromise, isEmpty, mod, nop, range, remove } from "../lib/util.js";
+import { clamp, extend, fold1, imagePromise, isEmpty, mod, nop, range, remove } from "../lib/util.js";
 
 test("clamp(x, min, max)", t => {
     t.equal(clamp(0, 1, 10), 1, "min");
@@ -20,6 +20,18 @@ test("extend(object, ...properties)", t => {
     t.equal(Bar.bar, 3, "bar");
     t.equal(Bar.baz, 4, "baz");
     t.equal(Bar.fum, "quux", "fum");
+});
+
+test("fold1(xs, f, this?)", t => {
+    t.undefined(fold1([], () => { throw new Error("should not be called"); }), "empty array");
+    t.equal(fold1([17], () => { throw new Error("should not be called"); }), 17, "one element");
+    t.equal(fold1([17, 3], (z, x) => z - x), 14, "two elements");
+    t.equal(fold1([17, 3, 2, 1], (z, x) => z - x), 11, "several elements");
+    t.equal(fold1([17, "foo", "bar", "baz"], function (z, x) { return z - this[x]; }, {
+        foo: 3,
+        bar: 2,
+        baz: 1
+    }), 11, "this");
 });
 
 test("imagePromise(url)", async t => {
