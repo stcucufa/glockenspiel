@@ -47,15 +47,8 @@ test("Add a single event with at(f, t), t = ASAP (default)", t => {
     t.equal(updates, [["before 10", 7], ["at 10", 10], ["after 10", 21]], "Third update");
 });
 
-test("Don’t add events with indefinite time", t => {
+test("Don’t add events with illegal time value", t => {
     const scheduler = Scheduler.create();
-    t.empty(scheduler.events, "No events at creation");
-    scheduler.at(nop, Infinity);
-    t.empty(scheduler.events, "No event added with indefinite time (at)");
-    scheduler.at(nop, -Infinity);
-    t.empty(scheduler.events, "No event added with indefinite time (at, in the past)");
-    scheduler.every(nop, 10, Infinity);
-    t.empty(scheduler.events, "No event added with indefinite time (every)");
     t.throws(() => { scheduler.at(nop, NaN); }, "Cannot add event when time is NaN");
 });
 
