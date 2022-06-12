@@ -6,11 +6,15 @@
     <body>
         <script type="module">
 
-import { skip, test } from "./test.js";
+import { test } from "./test.js";
 import { ManualTick, Tick } from "../lib/tick.js";
 
-// FIXME broken in Firefox
-skip("Tick (automatic)", t => new Promise(resolve => {
+test("Tick (automatic)", t => new Promise(resolve => {
+    // TODO fix timeout in Firefox
+    if (/\brv:\d+/.test(navigator.userAgent)) {
+        t.skip();
+    }
+
     const tick = Tick.create();
     const start = tick.now;
     t.atLeast(start, 0);

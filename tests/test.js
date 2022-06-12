@@ -100,6 +100,12 @@ const TestCase = {
         );
     },
 
+    skip() {
+        const error = new Error("Skip");
+        error.name = "SkipError";
+        throw error;
+    },
+
     throws(f, context) {
         try {
             f();
@@ -155,6 +161,14 @@ function initFrame(tests) {
     let startTimeout;
     let missing = 0;
 
+    function updateIcon(name, data) {
+        if (/#running/.test(currentLi.innerHTML)) {
+            currentLi.innerHTML = currentLi.innerHTML.replace(/#running/, `#${name}`);
+        } else {
+            currentLi.innerHTML += ` ${icon(name)} ${data.title ?? data.i}`;
+        }
+    }
+
     function run(li) {
         currentLi = li;
         if (status) {
@@ -184,22 +198,14 @@ function initFrame(tests) {
         },
 
         success(e, data) {
-            if (/#running/.test(currentLi.innerHTML)) {
-                currentLi.innerHTML = currentLi.innerHTML.replace(/#running/, "#pass");
-            } else {
-                currentLi.innerHTML += ` ${icon("pass")} ${data.title ?? data.i}`;
-            }
+            updateIcon("pass", data);
             this.successes += 1;
             console.log(`+++ Success, #successes: ${this.successes}`);
             postMessage(e.source, "run");
         },
 
         failure(e, data) {
-            if (/#running/.test(currentLi.innerHTML)) {
-                currentLi.innerHTML = currentLi.innerHTML.replace(/#running/, "#fail");
-            } else {
-                currentLi.innerHTML += ` ${icon("fail")} ${data.title ?? data.i}`;
-            }
+            updateIcon("fail", data);
             this.failures += 1;
             console.log(`--- Failure: ${data.error}, #failures: ${this.failures}`);
             postMessage(e.source, "run");
@@ -213,9 +219,9 @@ function initFrame(tests) {
         },
 
         skipped(e, data) {
-            currentLi.innerHTML += ` ${icon("skip")} ${data.title ?? data.i}`;
+            updateIcon("skip", data);
             this.skips += 1;
-            console.log(`... Skipped, #skips: ${this.skips}`);
+            console.log(`~~~ Skipped, #skips: ${this.skips}`);
             postMessage(e.source, "run");
         },
 
@@ -261,11 +267,6 @@ function initTest() {
                 const [title, test] = this.tests.shift();
                 const i = this.testCount - n;
                 const data = { title, i };
-                if (!test) {
-                    console.log(`~~~ Skipping test #${i + 1}${title ? (": \"" + title + "\"") : ""}`);
-                    postMessage(e.source, "skipped", data);
-                    return;
-                }
 
                 console.log(`... Running test #${i + 1}${title ? (": \"" + title + "\"") : ""}`);
                 const testCase = TestCase.create({ for: title });
@@ -292,11 +293,15 @@ function initTest() {
                         postMessage(e.source, "success", data);
                     }
                 } catch (error) {
-                    postMessage(
-                        e.source,
-                        error.timeout ? "timeout" : "failure",
-                        Object.assign(data, { error: error.message })
-                    );
+                    if (error.name === "SkipError") {
+                        postMessage(e.source, "skipped", data);
+                    } else {
+                        postMessage(
+                            e.source,
+                            error.timeout ? "timeout" : "failure",
+                            Object.assign(data, { error: error.message })
+                        );
+                    }
                 }
             } else {
                 postMessage(e.source, "done");
@@ -334,7 +339,7 @@ function initTest() {
 
         skipped(e, data) {
             this.skips += 1;
-            console.log(`... Skipped, #skips: ${this.skips}`);
+            console.log(`~~~ Skipped, #skips: ${this.skips}`);
             postMessage(e.source, "run");
         },
 
@@ -368,8 +373,4 @@ export function test(title, f) {
         title = "";
     }
     handler.tests.push([title, f]);
-}
-
-export function skip(title) {
-    handler.tests.push([title]);
 }

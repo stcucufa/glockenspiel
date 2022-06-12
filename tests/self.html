@@ -6,11 +6,12 @@
 
 import { on } from "../lib/events.js";
 import { nop } from "../lib/util.js";
-import { test, skip } from "./test.js";
+import { test } from "./test.js";
 
 const expectations = {
     successes: 0,
-    failures: 0
+    failures: 0,
+    skips: 0
 };
 
 function pass(title, f) {
@@ -23,19 +24,26 @@ function fail(title, f) {
     expectations.failures += 1;
 }
 
+function skip(title, f) {
+    test(`[skip] ${title}`, f);
+    expectations.skips += 1;
+}
+
 pass("t.throws", t => {
     t.throws(() => {
         throw new Error("This is expected");
     }, "Did throw");
 });
 
-fail("t.throws", t => { t.throws(nop, "Did not throw"); });
+fail("t.throws()", t => { t.throws(nop, "Did not throw"); });
 
 pass("t.undefined()", t => { t.undefined(nop(), "nop() returns nothing"); });
 fail("t.undefined()", t => { t.undefined("something", "String is not undefined"); });
 
+skip("t.skip()", t => { t.skip(); });
+
 on(window, "tests:done", ({ handler }) => {
-    if (["successes", "failures"].every(p => expectations[p] === handler[p])) {
+    if (["successes", "failures", "skips"].every(p => expectations[p] === handler[p])) {
         console.info("All expectations match");
     } else {
         console.error("Failed to match expectations", expectations, handler);
