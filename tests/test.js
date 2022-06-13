@@ -176,16 +176,16 @@ function initFrame(tests) {
         }
         startTimeout = setTimeout(() => {
             console.log(`??? No tests for ${iframe.src}`);
-            currentLi.innerHTML = `<span class="notests">${currentLi.textContent}</span>`;
-            nextTest();
+            currentLi.innerHTML = `<a href="${iframe.src}" class="notests">${currentLi.textContent}</a>`;
             missing += 1;
+            handler.done();
         }, DefaultTimeoutMs);
         document.body.appendChild(iframe);
         iframe.src = li.textContent;
     }
     nextTest();
 
-    return {
+    const handler = {
         ready(e, data) {
             console.log(">>> Running tests");
             clearTimeout(startTimeout);
@@ -225,7 +225,7 @@ function initFrame(tests) {
             postMessage(e.source, "run");
         },
 
-        done(e) {
+        done() {
             console.log(`<<< Done, #successes: ${this.successes}, #failures: ${this.failures}, #timeouts: ${this.timeouts}, #skips: ${this.skips}, #missing: ${missing}`);
             if (status) {
                 const reports = [
@@ -247,6 +247,7 @@ function initFrame(tests) {
         skips: 0
     };
 
+    return handler;
 }
 
 function initTest() {
