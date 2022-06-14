@@ -34,16 +34,16 @@ test("Going forward through several events", t => {
 
     clock.start();
     clock.tick.advance(1);
-    t.equal(events[0], 0, "event happened at 0");
-    t.equal(events[1], 1, "event happened at 1");
-    t.equal(events[2], false, "event has not happened yet at 2");
+    t.equal(events, [0, false, false], "First tick");
     clock.tick.advance(1);
-    t.equal(events[2], 2, "event happened at 2");
+    t.equal(events, [0, 1, false], "Second tick");
+    clock.tick.advance(1);
+    t.equal(events, [0, 1, 2], "Third tick");
 });
 
 test("Going backward", t => {
     const clock = ManualClock.create();
-    const events = [false, false, false];
+    const events = [0, 0, 0];
     for (let i = 0; i < events.length; ++i) {
         clock.scheduler.at((updateTime, from, to) => {
             events[i] = updateTime * sign(to - from);
@@ -51,14 +51,10 @@ test("Going backward", t => {
     }
 
     clock.start();
-    clock.tick.advance(3);
-    t.equal(events[0], 1, "event happened at 1");
-    t.equal(events[1], 2, "event happened at 2");
-    t.equal(events[2], 3, "event happened at 3");
-    clock.tick.advance(-3);
-    t.equal(events[0], -1, "event happened again at 1");
-    t.equal(events[1], -2, "event happened again at 2");
-    t.equal(events[2], 3, "event did not happen again at 3");
+    clock.tick.advance(4);
+    t.equal(events, [1, 2, 3], "events happened (forward)");
+    clock.tick.advance(-4);
+    t.equal(events, [-1, -2, -3], "events happened (backward)");
 });
 
 test("Repeating event", t => {
@@ -201,21 +197,14 @@ test("Before update really happens before updates", t => {
     const clock = ManualClock.create();
     const occurrences = [];
     once(clock, "before-update", e => {
-        clock.scheduler.at(t => { occurrences.push(["a", t]); });
+        clock.scheduler.at(t => { occurrences.push(["a", t]); }, 1);
     });
 
     clock.scheduler.every(t => { occurrences.push(["*", t]); }, 17);
 
     clock.start();
     clock.tick.advance(7);
-    t.equal(occurrences, [["a", 0], ["*", 0]], "First update");
-
-    once(clock, "before-update", e => {
-        clock.scheduler.at(t => { occurrences.push(["b", t]); });
-    });
-
-    clock.tick.advance(7);
-    t.equal(occurrences, [["a", 0], ["*", 0], ["b", 14]], "Second update");
+    t.equal(occurrences, [["*", 0], ["a", 1]]);
 });
 
 test("Stop during update", t => {
