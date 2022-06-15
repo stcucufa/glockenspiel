@@ -2,10 +2,26 @@
 <html>
     <head>
         <title>Util</title>
+        <meta charset="utf8">
         <script type="module">
 
 import { test } from "./test.js";
-import { clamp, extend, fold1, imagePromise, isEmpty, mod, nop, range, remove } from "../lib/util.js";
+import { assoc, clamp, extend, fold1, I, imagePromise, isEmpty, isNumber, mod, nop, range, remove } from "../lib/util.js";
+
+test("assoc(xs, f?)", t => {
+    t.empty(assoc([], nop), "empty list");
+
+    const simpleMap = new Map();
+    simpleMap.set("foo", 1);
+    simpleMap.set("bar", 2);
+    t.equal(assoc([["foo", 1], ["bar", 2]]), simpleMap, "I is the default for f");
+
+    const map = new Map();
+    map.set("one", 1);
+    map.set("two", 2);
+    map.set("three", 3);
+    t.equal(assoc(["one", "two", "three"], (x, i) => [x, i + 1]), map);
+});
 
 test("clamp(x, min, max)", t => {
     t.equal(clamp(0, 1, 10), 1, "min");
@@ -32,6 +48,10 @@ test("fold1(xs, f, this?)", t => {
         bar: 2,
         baz: 1
     }), 11, "this");
+});
+
+test("I(x)", t => {
+    t.same(I(1), 1, "identity");
 });
 
 test("imagePromise(url)", async t => {
@@ -69,6 +89,18 @@ test("isEmpty(x)", t => {
     t.equal(isEmpty(Symbol()), false, "symbol");
     t.equal(isEmpty(Math.PI), false, "number");
     t.equal(isEmpty(nop), false, "function");
+});
+
+test("isNumber(x)", t => {
+    t.equal(isNumber(0), true, "0 is a number");
+    t.equal(isNumber(Math.PI), true, "π is a number");
+    t.equal(isNumber(-12), true, "-12 is a number");
+    t.equal(isNumber(Infinity), true, "∞ is a number");
+    t.equal(isNumber(-Infinity), true, "-∞ is a number");
+    t.equal(isNumber(NaN), false, "NaN is not a number");
+    t.equal(isNumber("12"), false, "string is not a number");
+    t.equal(isNumber(Symbol()), false, "symbol is not a number");
+    t.equal(isNumber(true), false, "boolean is not a number");
 });
 
 test("mod(x, m)", t => {

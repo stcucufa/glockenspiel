@@ -1,4 +1,4 @@
-import { create, isEmpty, nop } from "../lib/util.js";
+import { create, isEmpty, isObject, nop } from "../lib/util.js";
 import { notify } from "../lib/events.js";
 import { show } from "../lib/show.js";
 
@@ -8,14 +8,35 @@ const DefaultTimeoutMs = 300;
 const message = (msg, context) => () => (context ? `${context}: ` : "") + msg();
 
 // Deep equality test
-// TODO ensure that we can compare cyclic structures
-// TODO object comparisons are shallow, which is useful in some cases
-const equal = (x, y) => typeof x !== typeof y ? false :
-    Array.isArray(x) ? equal_array(x, y) :
+const equal = (x, y) => (x === y) || (
+    typeof x !== typeof y ? false :
+    isObject(x) ? equal_object(x, y) :
     typeof x === "number" ? equal_number(x, y) :
-        x === y;
+        false
+);
+
+// Compare objects, checking for specific types; otherwise they must have the same keys and equal values
+function equal_object(x, y) {
+    if (Array.isArray(x)) {
+        return Array.isArray(y) && equal_array(x, y);
+    }
+    if (x instanceof Map) {
+        return y instanceof Map && equal_map(x, y);
+    }
+
+    const keys = Object.keys(x);
+    return keys.length === Object.keys(y).length &&
+        keys.every(key => key in y && equal(x[key], y[key]));
+}
 
 const equal_array = (x, y) => x.length === y.length && x.every((xi, i) => equal(xi, y[i]));
+
+// Compare Maps
+function equal_map(x, y) {
+    const keys = [...x.keys()];
+    return keys.length === [...y.keys()].length &&
+        keys.every(key => y.has(key) && equal(x.get(key), y.get(key)));
+}
 
 // Compare numbers, allowing NaN === NaN
 const equal_number = (x, y) => typeof y === "number" && (x === y || isNaN(x) && isNaN(y));
