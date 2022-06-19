@@ -1,4 +1,4 @@
-import { create, isEmpty, isObject, nop } from "../lib/util.js";
+import { create, isEmpty, isObject, nop, typeOf } from "../lib/util.js";
 import { notify } from "../lib/events.js";
 import { show } from "../lib/show.js";
 
@@ -40,6 +40,34 @@ function equal_map(x, y) {
 
 // Compare numbers, allowing NaN === NaN
 const equal_number = (x, y) => typeof y === "number" && (x === y || isNaN(x) && isNaN(y));
+
+export function diff(x, y) {
+    const tx = typeOf(x);
+    const ty = typeOf(y);
+
+    const helpers = {
+        object: function(x, y) {
+            const dx = {};
+            const dy = {};
+            for (let [k, v] of Object.entries(x)) {
+                if (!(k in y)) {
+                    dx[k] = v;
+                } else if (!equal(v, y[k])) {
+                    dx[k] = v;
+                    dy[k] = y[k];
+                }
+            }
+            for (let [k, v] of Object.entries(y)) {
+                if (!(k in x)) {
+                    dy[k] = v;
+                }
+            }
+            return isEmpty(dx) && isEmpty(dy) ? [] : [dx, dy];
+        }
+    };
+
+    return tx !== ty ? [tx, ty] : tx in helpers ? helpers[tx](x, y) : x !== y ? [x, y] : [];
+}
 
 const TestCase = {
     create: create({ timeoutMs: DefaultTimeoutMs }),
@@ -92,7 +120,7 @@ const TestCase = {
     equal(value, expected, context) {
         this.expect(
             equal(value, expected),
-            [() => `expected ${show(value)} to be equal to ${show(expected)}`, context]
+            [() => `expected ${show(value)} to be equal to ${show(expected)}; diff: ${show(diff(value, expected))}`, context]
         );
     },
 

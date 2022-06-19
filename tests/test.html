@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Test</title>
+        <script type="module">
+
+import { diff, test } from "./test.js";
+
+test("diff", t => {
+    t.equal(diff({ foo: 1, bar: 2 }, void 0), ["object", "undefined"], "Different types");
+    t.equal(diff({ foo: 1, bar: 2 }, { bar: 2, foo: 1 }), [], "Equal objects");
+    t.equal(
+        diff({ foo: [1, 2, 3], bar: { x: "y" }, baz: 3 }, { foo: [1, 2, 3], bar: { y: "x" }, fum: 8 }),
+        [{ bar: { x: "y" }, baz: 3 }, { bar: { y: "x" }, fum: 8 }],
+        "Objects"
+    );
+    t.equal(diff(true, false), [true, false], "Booleans");
+    t.equal(diff(17, 19), [17, 19], "Numbers");
+    t.equal(diff("foo", "bar"), ["foo", "bar"], "Strings");
+    t.equal(diff(null, null), [], "No difference");
+});
+
+        </script>
+    </head>
+    <body>
+    </body>
+</html>
