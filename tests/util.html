@@ -6,7 +6,9 @@
         <script type="module">
 
 import { test } from "./test.js";
-import { assoc, clamp, extend, fold1, I, imagePromise, isEmpty, isNumber, mod, nop, range, remove } from "../lib/util.js";
+import {
+    assoc, clamp, extend, fold1, I, imagePromise, isEmpty, isNumber, mod, nop, range, remove, typeOf
+} from "../lib/util.js";
 
 test("assoc(xs, f?)", t => {
     t.empty(assoc([], nop), "empty list");
@@ -130,6 +132,24 @@ test("range(from, to, step?)", t => {
     t.equal(range(10, 1, -2.5), [10, 7.5, 5, 2.5], "negative step (-2)");
     t.equal(range(5, 5), [5], "single element");
     t.equal(range(10, 1), [], "no backward range without negative step");
+});
+
+test("typeOf(x)", t => {
+    t.equal(typeOf(undefined), "undefined");
+    t.equal(typeOf(null), "null");
+    t.equal(typeOf(true), "boolean");
+    t.equal(typeOf(false), "boolean");
+    t.equal(typeOf(Math.PI), "number");
+    t.equal(typeOf(NaN), "number");
+    t.equal(typeOf(-Infinity), "number");
+    t.equal(typeOf(BigInt(Number.MAX_SAFE_INTEGER) + 1n), "bigint");
+    t.equal(typeOf("string"), "string");
+    t.equal(typeOf(Symbol()), "symbol");
+    t.equal(typeOf(nop), "function");
+    t.equal(typeOf([1, 2, 3]), "array");
+    t.equal(typeOf(new Map()), "map");
+    t.equal(typeOf(new Set()), "set");
+    t.equal(typeof({ foo: 1, bar: 2 }), "object");
 });
 
         </script>
