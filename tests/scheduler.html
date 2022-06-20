@@ -39,6 +39,18 @@ test("Don’t add events with illegal time value", t => {
     t.throws(() => { scheduler.at(nop, NaN); }, "Cannot add event when time is NaN");
 });
 
+test("Clear the schedule with clear()", t => {
+    const scheduler = Scheduler.create();
+    let happened = false;
+    scheduler.at(() => { happened = true; }, 10);
+    update(scheduler, 0, 20);
+    t.equal(happened, true, "Event happens during the update");
+    happened = false;
+    scheduler.clear();
+    update(scheduler, 0, 20);
+    t.equal(happened, false, "No more events");
+});
+
 test("Add repeating events with every(f, [n, d])", t => {
     const scheduler = Scheduler.create();
     const frames = [];
