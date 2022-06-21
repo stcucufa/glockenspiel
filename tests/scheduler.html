@@ -6,7 +6,7 @@
 
 import { test } from "./test.js";
 import { nop } from "../lib/util.js";
-import { Scheduler, ASAP } from "../lib/scheduler.js";
+import { Scheduler, ASAP, at } from "../lib/scheduler.js";
 
 function update(scheduler, from, to, inclusive) {
     for (const [e, t, i] of scheduler.schedule(from, to, inclusive)) {
@@ -200,6 +200,36 @@ test("Event priority with ASAP", t => {
     t.equal(occurrences, [["a", 0], ["b", 0], ["a", 3], ["a", 6], ["b", 6], ["a", 9], ["a", 12]], "Second update");
     update(scheduler, 13, 15);
     t.equal(occurrences, [["a", 0], ["b", 0], ["a", 3], ["a", 6], ["b", 6], ["a", 9], ["a", 12], ["b", 13]], "Third update");
+});
+
+test("Delegate: set but no methods", t => {
+    const scheduler = Scheduler.create();
+    scheduler.delegate = {};
+    const occurrences = [];
+    scheduler.every(t => { occurrences.push(t); }, 3);
+    update(scheduler, 0, 10);
+    t.equal(occurrences, [0, 3, 6, 9]);
+});
+
+test("Delegate: willScheduleEvents(from, to)", t => {
+    const scheduler = Scheduler.create();
+    scheduler.delegate = {
+        willScheduleEvents(from, to) {
+            return [
+                at(t => occurrences.push(["begin", t]), from, -1),
+                at(t => occurrences.push(["end", t]), to - 1, -1)
+            ];
+        }
+    };
+    const occurrences = [];
+    scheduler.every(t => { occurrences.push(t); }, 3);
+    update(scheduler, 0, 10);
+    t.equal(occurrences, [0, ["begin", 0], 3, 6, 9, ["end", 9]]);
+});
+
+test("Delegate helper: at(f, t, priority = 0)", t => {
+    t.equal(at(nop, 17), [{ f: nop, priority: 0 }, 17], "Default priority");
+    t.equal(at(nop, 19, 31), [{ f: nop, priority: 31 }, 19], "Priority");
 });
 
         </script>
