@@ -2,6 +2,7 @@
 <html>
     <head>
         <title>Self testin’</title>
+        <meta charset="utf8">
         <script type="module">
 
 import { on } from "../lib/events.js";
@@ -41,6 +42,8 @@ pass("t.undefined()", t => { t.undefined(nop(), "nop() returns nothing"); });
 fail("t.undefined()", t => { t.undefined("something", "String is not undefined"); });
 
 skip("t.skip()", t => { t.skip(); });
+
+fail("console.assert failure", t => { console.assert(false); });
 
 on(window, "tests:done", ({ handler }) => {
     if (["successes", "failures", "skips"].every(p => expectations[p] === handler[p])) {

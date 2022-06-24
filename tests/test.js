@@ -46,6 +46,16 @@ const TestCase = {
 
     init() {
         this.failures = [];
+        this.assert = console.assert;
+        console.assert = (p, ...rest) => {
+            this.assert.call(console, p, ...rest);
+            this.expect(p, [() => "assertion failed"]);
+        };
+    },
+
+    done(...args) {
+        console.assert = this.assert;
+        postMessage(...args);
     },
 
     expect(p, [message, context]) {
@@ -306,19 +316,19 @@ function initTest() {
                         ]);
                     }
                     if (testCase.failures.length > 0) {
-                        postMessage(
+                        testCase.done(
                             e.source,
                             "failure",
                             Object.assign(data, { error: testCase.failures.join("; ") })
                         );
                     } else {
-                        postMessage(e.source, "success", data);
+                        testCase.done(e.source, "success", data);
                     }
                 } catch (error) {
                     if (error.name === "SkipError") {
-                        postMessage(e.source, "skipped", data);
+                        testCase.done(e.source, "skipped", data);
                     } else {
-                        postMessage(
+                        testCase.done(
                             e.source,
                             error.timeout ? "timeout" : "failure",
                             Object.assign(data, { error: error.message })
