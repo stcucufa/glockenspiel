@@ -7,7 +7,7 @@
 
 import { test } from "./test.js";
 import {
-    assoc, clamp, extend, fold1, I, imagePromise, isEmpty, isNumber, mod, nop, range, remove, typeOf
+    assoc, clamp, extend, fold1, I, imagePromise, isEmpty, isNumber, K, mod, nop, range, remove, typeOf
 } from "../lib/util.js";
 
 test("assoc(xs, f?)", t => {
@@ -103,6 +103,11 @@ test("isNumber(x)", t => {
     t.equal(isNumber("12"), false, "string is not a number");
     t.equal(isNumber(Symbol()), false, "symbol is not a number");
     t.equal(isNumber(true), false, "boolean is not a number");
+});
+
+test("K(x)", t => {
+    t.typeof(K, "function", "K returns a constant function");
+    t.equal(K("foo")("bar"), "foo", "K x y = x");
 });
 
 test("mod(x, m)", t => {
