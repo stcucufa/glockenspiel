@@ -51,6 +51,18 @@ test("Manual tick: skip", t => {
     t.equal(lastUpdate, 3);
 });
 
+test("Manual tick: seek", t => {
+    const tick = ManualTick.create();
+    let lastUpdate = tick.now;
+
+    tick.requestUpdate(this, updateTime => {
+        lastUpdate = updateTime;
+    });
+
+    tick.seek(17);
+    t.equal(lastUpdate, 17);
+});
+
         </script>
     </body>
 </html>
