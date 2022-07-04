@@ -148,10 +148,13 @@ test("typeOf(x)", t => {
     t.equal(typeOf(NaN), "number");
     t.equal(typeOf(-Infinity), "number");
     t.equal(typeOf(BigInt(Number.MAX_SAFE_INTEGER) + 1n), "bigint");
-    t.equal(typeOf("string"), "string");
+    t.equal(typeOf(new String("string object")), "string", "string literal");
+    t.equal(typeOf("string"), "string", "string literal");
     t.equal(typeOf(Symbol()), "symbol");
     t.equal(typeOf(nop), "function");
     t.equal(typeOf([1, 2, 3]), "array");
+    t.equal(typeOf(new RegExp("bar")), "regex");
+    t.equal(typeOf(/foo/), "regex", "regex literal");
     t.equal(typeOf(new Map()), "map");
     t.equal(typeOf(new Set()), "set");
     t.equal(typeof({ foo: 1, bar: 2 }), "object");

@@ -117,6 +117,13 @@ const TestCase = {
         );
     },
 
+    match(value, regex, context) {
+        this.expect(
+            regex.test(value),
+            [() => `expected ${show(value)} to match ${show(regex)}`, context]
+        );
+    },
+
     ok(value, context) {
         this.expect(
             !!value,

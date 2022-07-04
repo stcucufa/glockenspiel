@@ -30,6 +30,9 @@ function skip(title, f) {
     expectations.skips += 1;
 }
 
+pass("t.match", t => { t.match("foo", /^fo+$/, "Regex match"); });
+fail("t.match", t => { t.match("bar", /^fo+$/, "Regex does not match"); });
+
 pass("t.throws", t => {
     t.throws(() => {
         throw new Error("This is expected");
