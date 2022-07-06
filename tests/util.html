@@ -32,12 +32,14 @@ test("clamp(x, min, max)", t => {
 });
 
 test("extend(object, ...properties)", t => {
-    const Foo = { foo: 1, fum: 2 };
-    const Bar = extend(Foo, { bar: 3, fum: "quux" }, { baz: 4 });
+    const Foo = { foo: 1, fum: 2, f: K(true), get x() { return "y"; }  };
+    const Bar = extend(Foo, { bar: 3, fum: "quux" }, { baz: 4, get x() { return "z"; } });
     t.equal(Bar.foo, 1, "foo");
     t.equal(Bar.bar, 3, "bar");
     t.equal(Bar.baz, 4, "baz");
     t.equal(Bar.fum, "quux", "fum");
+    t.equal(Bar.f(), true, "f");
+    t.equal(Bar.x, "z", "x");
 });
 
 test("fold1(xs, f, this?)", t => {
