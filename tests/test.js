@@ -304,7 +304,7 @@ function initTest() {
 
     function showExpectations(data) {
         const li = document.querySelector(`ul.tests li:nth-child(${data.i + 1})`);
-        li.innerHTML += data.error ? ` ${data.error}` : data.expectations.map(
+        li.innerHTML += data.error ? ` ${icon("fail")} ${data.error}` : data.expectations.map(
             ([message, pass]) => ` ${icon(pass ? "pass" : "fail")} ${message}`
         ).join("");
     }
