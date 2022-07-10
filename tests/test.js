@@ -46,10 +46,11 @@ const TestCase = {
 
     init() {
         this.failures = [];
+        this.expectations = [];
         this.assert = console.assert;
         console.assert = (p, ...rest) => {
             this.assert.call(console, p, ...rest);
-            this.expect(p, [() => "assertion failed"]);
+            this.expect(p, [() => "assertion failed"], true);
         };
     },
 
@@ -58,7 +59,10 @@ const TestCase = {
         postMessage(...args);
     },
 
-    expect(p, [message, context]) {
+    expect(p, [message, context], failureOnly = false) {
+        if (!(p && failureOnly)) {
+            this.expectations.push([(context ?? ""), p]);
+        }
         if (!p) {
             this.failures.push((context ? `${context}: ` : "") + message());
         }
@@ -168,11 +172,13 @@ const TestCase = {
 };
 
 const icon = (function() {
-    const script = Array.prototype.find.call(
+    const prefix = Array.prototype.find.call(
         document.querySelectorAll("script"),
         script => /\/test\.js\b/.test(script.src)
-    );
-    const prefix = script?.src.replace(/\/test\.js\b.*/, "/");
+    )?.src.replace(/\/test\.\b.*/, "/") ?? Array.prototype.find.call(
+        document.querySelectorAll("link[rel=stylesheet]"),
+        link => /\/test\.css\b/.test(link.href)
+    )?.href.replace(/\/test\.css.*/, "/");
     return id => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="icon">
     <use xlink:href="${prefix}icons.svg#${id}"/>
 </svg>`;
@@ -213,7 +219,6 @@ function initFrame(tests) {
             status.innerHTML = `${icon("running")} Running ${currentLi.innerHTML}`;
         }
         startTimeout = setTimeout(() => {
-            console.log(`??? No tests for ${iframe.src}`);
             currentLi.innerHTML = `<a href="${iframe.src}" class="notests">${currentLi.textContent}</a>`;
             missing += 1;
             handler.done();
@@ -225,7 +230,6 @@ function initFrame(tests) {
 
     const handler = {
         ready(e, data) {
-            console.log(">>> Running tests");
             clearTimeout(startTimeout);
             currentLi.innerHTML = `<a href="${data.url.href}">${data.title}</a>`;
             postMessage(e.source, "run");
@@ -238,33 +242,28 @@ function initFrame(tests) {
         success(e, data) {
             updateIcon("pass", data);
             this.successes += 1;
-            console.log(`+++ Success, #successes: ${this.successes}`);
             postMessage(e.source, "run");
         },
 
         failure(e, data) {
             updateIcon("fail", data);
             this.failures += 1;
-            console.log(`--- Failure: ${data.error}, #failures: ${this.failures}`);
             postMessage(e.source, "run");
         },
 
         timeout(e, data) {
             currentLi.innerHTML = currentLi.innerHTML.replace(/#running/, "#timeout");
             this.timeouts += 1;
-            console.log(`@@@ Timeout: ${data.error}, #timeouts: ${this.timeouts}`);
             postMessage(e.source, "run");
         },
 
         skipped(e, data) {
             updateIcon("skip", data);
             this.skips += 1;
-            console.log(`~~~ Skipped, #skips: ${this.skips}`);
             postMessage(e.source, "run");
         },
 
         done() {
-            console.log(`<<< Done, #successes: ${this.successes}, #failures: ${this.failures}, #timeouts: ${this.timeouts}, #skips: ${this.skips}, #missing: ${missing}`);
             if (status) {
                 const reports = [
                     ["successes", this.successes],
@@ -289,11 +288,33 @@ function initFrame(tests) {
 }
 
 function initTest() {
-    console.log(`!!! New tests: ${document.title} (${window.location})`);
     postMessage(parent, "ready", {
         title: document.title,
         url: window.location
     });
+
+    function updateIcon(name, data) {
+        const li = document.querySelector(`ul.tests li:nth-child(${data.i + 1})`);
+        if (/#running/.test(li.innerHTML)) {
+            li.innerHTML = li.innerHTML.replace(/#running/, `#${name}`);
+        } else {
+            li.innerHTML += ` ${icon(name)}`;
+        }
+    }
+
+    function showExpectations(data) {
+        const li = document.querySelector(`ul.tests li:nth-child(${data.i + 1})`);
+        li.innerHTML += data.error ? ` ${data.error}` : data.expectations.map(
+            ([message, pass]) => ` ${icon(pass ? "pass" : "fail")} ${message}`
+        ).join("");
+    }
+
+    function updateStatus(name, message) {
+        const status = document.querySelector("p.status");
+        if (status) {
+            status.innerHTML = `${icon(name)} ${message}`;
+        }
+    }
 
     const runner = {
         async run(e, data) {
@@ -307,7 +328,7 @@ function initTest() {
                 const i = this.testCount - n;
                 const data = { title, i };
 
-                console.log(`... Running test #${i + 1}${title ? (": \"" + title + "\"") : ""}`);
+                updateStatus("running", title ?? i);
                 const testCase = TestCase.create({ for: title });
                 try {
                     const promise = test(testCase);
@@ -326,10 +347,14 @@ function initTest() {
                         testCase.done(
                             e.source,
                             "failure",
-                            Object.assign(data, { error: testCase.failures.join("; ") })
+                            Object.assign(data, { expectations: testCase.expectations })
                         );
                     } else {
-                        testCase.done(e.source, "success", data);
+                        testCase.done(
+                            e.source,
+                            "success",
+                            Object.assign(data, { expectations: testCase.expectations })
+                        );
                     }
                 } catch (error) {
                     if (error.name === "SkipError") {
@@ -352,38 +377,52 @@ function initTest() {
 
     return parent !== window ? runner : Object.assign(runner, {
         ready(e, data) {
-            console.log(`>>> Running tests: ${data.title}`);
+            const h1 = document.body.appendChild(document.createElement("h1"));
+            h1.textContent = data.title;
+            const status = document.body.appendChild(document.createElement("p"));
+            status.classList = "status";
+            const ul = document.body.appendChild(document.createElement("ul"));
+            ul.classList = "tests";
+            this.tests.forEach(function([title]) {
+                const li = ul.appendChild(document.createElement("li"));
+                li.innerHTML = title;
+            });
             postMessage(e.source, "run");
         },
 
-        started: nop,
-
-        success(e) {
+        success(e, data) {
+            showExpectations(data);
             this.successes += 1;
-            console.log(`+++ Success, #successes: ${this.successes}`);
             postMessage(e.source, "run");
         },
 
         failure(e, data) {
+            showExpectations(data);
             this.failures += 1;
-            console.log(`--- Failure: ${data.error}, #failures: ${this.failures}`);
             postMessage(e.source, "run");
         },
 
         timeout(e, data) {
+            updateIcon("timeout", data);
             this.timeouts += 1;
-            console.log(`@@@ Timeout: ${data.error}, #timeouts: ${this.timeouts}`);
             postMessage(e.source, "run");
         },
 
         skipped(e, data) {
+            updateIcon("skip", data);
             this.skips += 1;
-            console.log(`~~~ Skipped, #skips: ${this.skips}`);
             postMessage(e.source, "run");
         },
 
         done(e) {
-            console.log(`<<< Done, #successes: ${this.successes}, #failures: ${this.failures}, #timeouts: ${this.timeouts}, #skips: ${this.skips}`);
+            const reports = [
+                ["successes", this.successes],
+                ["failures", this.failures],
+                ["timeouts", this.timeouts],
+                ["skips", this.skips],
+            ].filter(([_, n]) => n > 0).map(xs => xs.join(": "));
+            const failure = this.failures > 0 || this.timeouts > 0;
+            updateStatus(failure ? "fail" : "pass", `Done, ${reports.join(", ")}.`);
             notify(window, "tests:done", { handler: this });
         },
 
