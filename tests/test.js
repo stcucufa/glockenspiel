@@ -61,7 +61,7 @@ const TestCase = {
 
     expect(p, [message, context], failureOnly = false) {
         if (!(p && failureOnly)) {
-            this.expectations.push([(context ?? ""), p]);
+            this.expectations.push([(context ?? "") + (p ? "" : `: ${message()}`), p]);
         }
         if (!p) {
             this.failures.push((context ? `${context}: ` : "") + message());
@@ -111,6 +111,7 @@ const TestCase = {
     },
 
     fail(message = "failed") {
+        this.expectations.push([message, false]);
         this.failures.push(message);
     },
 
@@ -151,8 +152,11 @@ const TestCase = {
     throws(f, context) {
         try {
             f();
-            this.failures.push((context ? `${context}: ` : "") + "expected an exception to be thrown");
+            const message = (context ? `${context}: ` : "") + "expected an exception to be thrown";
+            this.expectations.push([message, false]);
+            this.failures.push(message);
         } catch (_) {
+            this.expectations.push([context ?? "", true]);
         }
     },
 
@@ -196,12 +200,11 @@ function initFrame(tests) {
         iframe.remove();
         if (tests.length > 0) {
             run(tests.shift());
-        } else {
-            console.info("### Ran all tests.");
         }
     }
 
     let currentLi;
+    let currentURL;
     let startTimeout;
     let missing = 0;
 
@@ -209,7 +212,7 @@ function initFrame(tests) {
         if (/#running/.test(currentLi.innerHTML)) {
             currentLi.innerHTML = currentLi.innerHTML.replace(/#running/, `#${name}`);
         } else {
-            currentLi.innerHTML += ` ${icon(name)} ${data.title ?? data.i}`;
+            currentLi.innerHTML += ` <a href="${currentURL}#${data.i}">${icon(name)}</a> ${data.title ?? data.i}`;
         }
     }
 
@@ -232,11 +235,12 @@ function initFrame(tests) {
         ready(e, data) {
             clearTimeout(startTimeout);
             currentLi.innerHTML = `<a href="${data.url.href}">${data.title}</a>`;
+            currentURL = data.url.href;
             postMessage(e.source, "run");
         },
 
         started(e, data) {
-            currentLi.innerHTML += ` ${icon("running")} ${data.title ?? data.i}`;
+            currentLi.innerHTML += ` <a href="#${data.i}">${icon("running")}</a> ${data.title ?? data.i}`;
         },
 
         success(e, data) {
@@ -383,10 +387,19 @@ function initTest() {
             status.classList = "status";
             const ul = document.body.appendChild(document.createElement("ul"));
             ul.classList = "tests";
-            this.tests.forEach(function([title]) {
+
+            const i = parseInt(location.hash.substr(1));
+            if (i >= 0 && i < this.tests.length) {
                 const li = ul.appendChild(document.createElement("li"));
-                li.innerHTML = title;
-            });
+                li.innerHTML = `<a href="#">${this.tests[i][0]}</a>`;
+                this.tests = [this.tests[i]];
+            } else {
+                this.tests.forEach(function([title], i) {
+                    const li = ul.appendChild(document.createElement("li"));
+                    li.innerHTML = `<a href="#${i}">${title}</a>`;
+                });
+            }
+            window.onhashchange = () => { location.reload(); };
             postMessage(e.source, "run");
         },
 
