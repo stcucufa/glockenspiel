@@ -44,7 +44,7 @@ test("object", t => {
     t.equal(show(object), "{ foo: 1, bar: Symbol(bar), baz: { fum: [\"x\", null] } }", "nesting");
     object.self = object;
     t.equal(show(object), "{ foo: 1, bar: Symbol(bar), baz: { fum: [\"x\", null] }, self: ... }", "cycle");
-    
+    t.equal(show({ foo: 17, toString() { return `Showable(${this.foo})` } }), "Showable(17)", "use custom toString()");
 });
 
 test("string", t => {

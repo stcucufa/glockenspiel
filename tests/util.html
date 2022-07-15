@@ -8,7 +8,8 @@
 
 import { test } from "./test.js";
 import {
-    assoc, clamp, extend, fold1, I, imagePromise, isEmpty, isNumber, K, mod, nop, range, remove, typeOf
+    assoc, clamp, escapeMarkup, extend, fold1, I, imagePromise, isEmpty,
+    isNumber, K, mod, nop, range, remove, typeOf
 } from "../lib/util.js";
 
 test("assoc(xs, f?)", t => {
@@ -30,6 +31,11 @@ test("clamp(x, min, max)", t => {
     t.equal(clamp(0, 1, 10), 1, "min");
     t.equal(clamp(5, 1, 10), 5, "middle");
     t.equal(clamp(15, 1, 10), 10, "max");
+});
+
+test("escapeMarkup(string)", t => {
+    t.equal(escapeMarkup("foo"), "foo", "no markup");
+    t.equal(escapeMarkup("<a && b>"), "&lt;a &amp;&amp; b&gt;", "some markup");
 });
 
 test("extend(object, ...properties)", t => {
