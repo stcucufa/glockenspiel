@@ -8,8 +8,8 @@
 
 import { test } from "./test.js";
 import {
-    assoc, clamp, escapeMarkup, extend, fold1, I, imagePromise, isEmpty,
-    isNumber, K, mod, nop, range, remove, typeOf
+    assoc, clamp, escapeMarkup, extend, flip, fold1, I, imagePromise, isEmpty,
+    isNumber, K, mod, nop, range, remove, snd, typeOf
 } from "../lib/util.js";
 
 test("assoc(xs, f?)", t => {
@@ -47,6 +47,16 @@ test("extend(object, ...properties)", t => {
     t.equal(Bar.fum, "quux", "fum");
     t.equal(Bar.f(), true, "f");
     t.equal(Bar.x, "z", "x");
+});
+
+test("flip(f)", t => {
+    const sub = (x, y) => x - y;
+    const bus = flip(sub);
+    t.equal(bus(17, 19), 2, "Flip the first two arguments");
+
+    const xyz = (x, y, z) => x + y + z;
+    const yx = flip(xyz);
+    t.equal(yx(1, 2), NaN, "Flip discards any extra argument");
 });
 
 test("fold1(xs, f, this?)", t => {
@@ -146,6 +156,10 @@ test("range(from, to, step?)", t => {
     t.equal(range(10, 1, -2.5), [10, 7.5, 5, 2.5], "negative step (-2)");
     t.equal(range(5, 5), [5], "single element");
     t.equal(range(10, 1), [], "no backward range without negative step");
+});
+
+test("snd(x, y)", t => {
+    t.equal(snd("one", "two"), "two");
 });
 
 test("typeOf(x)", t => {
