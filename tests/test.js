@@ -61,7 +61,9 @@ const TestCase = {
 
     expect(p, [message, context], failureOnly = false) {
         if (!(p && failureOnly)) {
-            this.expectations.push([p ? (context ?? "") : ((context ? `${context}:` : "") + message()), p]);
+            this.expectations.push(
+                [p ? (context ?? "") : ((context ? `${context}: ` : "") + message()), p]
+            );
         }
         if (!p) {
             this.failures.push((context ? `${context}: ` : "") + message());
@@ -367,7 +369,7 @@ function initTest() {
                         testCase.done(
                             e.source,
                             error.timeout ? "timeout" : "failure",
-                            Object.assign(data, { error: error.message })
+                            Object.assign(data, { error: error.message ?? error })
                         );
                     }
                 }
