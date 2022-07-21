@@ -61,7 +61,7 @@ const TestCase = {
 
     expect(p, [message, context], failureOnly = false) {
         if (!(p && failureOnly)) {
-            this.expectations.push([(context ?? "") + (p ? "" : `: ${message()}`), p]);
+            this.expectations.push([p ? (context ?? "") : ((context ? `${context}:` : "") + message()), p]);
         }
         if (!p) {
             this.failures.push((context ? `${context}: ` : "") + message());
